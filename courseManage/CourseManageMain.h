@@ -39,10 +39,14 @@ public:
 	virtual BOOL OnInitDialog();
 	afx_msg void OnMenuExitClick();
 	CListCtrl m_listCtrl;
+	int m_selectLineNumber = -1;
 	BOOL ShowProcessList(CListCtrl &pListCtrl, vector<ProcessInfo*> &processVec);
 	BOOL GetProcessInfoVector(vector<ProcessInfo*> &processVec);
 	BOOL DestoryProcessInfoVector(vector<ProcessInfo*> &processVec);
 	virtual BOOL DestroyWindow();
 	int GetMemoryUsage(uint64_t* mem, DWORD processId);
 	int GetInfomation(DWORD processId, CString &info);
+	afx_msg void OnBnClickedButtonKillprocess();
+	int KillProcess(DWORD pid);
+	afx_msg void OnNMRClickCourseList(NMHDR *pNMHDR, LRESULT *pResult);
 };

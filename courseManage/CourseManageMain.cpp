@@ -83,7 +83,7 @@ BOOL CCourseManageMain::GetProcessInfoVector(vector<ProcessInfo*>& processVec)
 		if (retInt == -1) continue;
 		CString info;
 		GetInfomation(pe32.th32ProcessID, info);
-		if (info == _T("")) {
+		if (info == _T("")) { 
 			info = pe32.szExeFile;
 		}
 		/*CPUusage usg(pe32.th32ProcessID);
@@ -138,6 +138,9 @@ void CCourseManageMain::DoDataExchange(CDataExchange* pDX)
 
 BEGIN_MESSAGE_MAP(CCourseManageMain, CDialogEx)
 	ON_COMMAND(ID_32772, &CCourseManageMain::OnMenuExitClick)
+//	ON_NOTIFY(NM_CLICK, IDC_COURSE_LIST, &CCourseManageMain::OnNMClickCourseList)
+ON_BN_CLICKED(IDC_BUTTON_KILLPROCESS, &CCourseManageMain::OnBnClickedButtonKillprocess)
+ON_NOTIFY(NM_RCLICK, IDC_COURSE_LIST, &CCourseManageMain::OnNMRClickCourseList)
 END_MESSAGE_MAP()
 
 
@@ -156,12 +159,10 @@ BOOL CCourseManageMain::OnInitDialog()
 	m_listCtrl.InsertColumn(2, _T("线程数"), LVCFMT_LEFT, 50);
 	//m_listCtrl.InsertColumn(3, _T("CPU"), LVCFMT_LEFT, 45);
 	m_listCtrl.InsertColumn(3, _T("内存(当前工作集)"), LVCFMT_LEFT, 110);
-	m_listCtrl.InsertColumn(4, _T("描述"), LVCFMT_LEFT, 250);
+	m_listCtrl.InsertColumn(4, _T("描述"), LVCFMT_LEFT, 300);
 	processVector processVec;
 	GetProcessInfoVector(processVec);
 	sort(processVec.begin(), processVec.end(), ProcessInfo());
-	ShowProcessList(m_listCtrl, processVec);
-	Sleep(3000);
 	ShowProcessList(m_listCtrl, processVec);
 	DestoryProcessInfoVector(processVec);
 	return TRUE;  // return TRUE unless you set the focus to a control
@@ -214,7 +215,7 @@ int CCourseManageMain::GetInfomation(DWORD processId,CString &info)
 		DWORD fileVersionSize =  GetFileVersionInfoSize(str,NULL);
 		if (fileVersionSize) {
 			char * lpData = new char[fileVersionSize + 1];
-			bool queryRst = GetFileVersionInfo(
+			BOOL queryRst = GetFileVersionInfo(
 				str,
 				0,
 				fileVersionSize,
@@ -224,7 +225,6 @@ int CCourseManageMain::GetInfomation(DWORD processId,CString &info)
 				LPVOID  *lplpBuffer = (LPVOID*)new char[200];
 				memset(lplpBuffer, 0, 200);
 				UINT tmpSize = 0;
-				HRESULT hr;
 				struct LANGANDCODEPAGE {
 					WORD wLanguage;
 					WORD wCodePage;
@@ -255,4 +255,58 @@ int CCourseManageMain::GetInfomation(DWORD processId,CString &info)
 	}
 	CloseHandle(hProcess);
 	return resultInt;
+}
+
+
+void CCourseManageMain::OnBnClickedButtonKillprocess()
+{
+	int selected = m_listCtrl.GetSelectionMark();
+	if (selected != -1) {
+		//kill process
+		if (MessageBox(_T("确定要杀掉此进程吗?"),_T("进程管理系统"), MB_YESNO) == IDYES) {
+			CString pidStr = m_listCtrl.GetItemText(selected,1);
+			KillProcess(_ttol(pidStr));
+		}
+	}
+}
+
+int CCourseManageMain::KillProcess(DWORD pid)
+{	
+	HANDLE hProcess = OpenProcess(
+		PROCESS_TERMINATE,
+		FALSE,
+		pid
+	);
+	if (hProcess) {
+		TerminateProcess(
+			hProcess,
+			0
+		);
+	}
+	CloseHandle(hProcess);
+	return 0;
+}
+
+
+void CCourseManageMain::OnNMRClickCourseList(NMHDR *pNMHDR, LRESULT *pResult)
+{
+	LPNMITEMACTIVATE pNMItemActivate = reinterpret_cast<LPNMITEMACTIVATE>(pNMHDR);
+	int selected = m_listCtrl.GetSelectionMark();
+	if (selected != -1) {
+		POINT point;
+		HMENU hMenu, hSubMenu;
+		GetCursorPos(&point);
+		hMenu = LoadMenu(NULL, MAKEINTRESOURCE(IDR_MENU_RCLICK));
+		hSubMenu = GetSubMenu(hMenu, 0);
+		SetMenuDefaultItem(hSubMenu, -1, FALSE);
+		SetForegroundWindow();
+		TrackPopupMenu(hSubMenu, 0,
+			point.x, point.y, 0, m_hWnd, NULL);
+		//kill process
+		/*if (MessageBox(_T("确定要杀掉此进程吗?"), _T("进程管理系统"), MB_YESNO) == IDYES) {
+			CString pidStr = m_listCtrl.GetItemText(selected, 1);
+			KillProcess(_ttol(pidStr));
+		}*/
+	}
+	*pResult = 0;
 }
