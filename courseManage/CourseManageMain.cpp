@@ -141,6 +141,8 @@ BEGIN_MESSAGE_MAP(CCourseManageMain, CDialogEx)
 //	ON_NOTIFY(NM_CLICK, IDC_COURSE_LIST, &CCourseManageMain::OnNMClickCourseList)
 ON_BN_CLICKED(IDC_BUTTON_KILLPROCESS, &CCourseManageMain::OnBnClickedButtonKillprocess)
 ON_NOTIFY(NM_RCLICK, IDC_COURSE_LIST, &CCourseManageMain::OnNMRClickCourseList)
+ON_COMMAND(ID__KILL_PROCESS, &CCourseManageMain::InMenuKillProcess)
+ON_COMMAND(ID__32782, &CCourseManageMain::InMenuOpenFolder)
 END_MESSAGE_MAP()
 
 
@@ -302,11 +304,45 @@ void CCourseManageMain::OnNMRClickCourseList(NMHDR *pNMHDR, LRESULT *pResult)
 		SetForegroundWindow();
 		TrackPopupMenu(hSubMenu, 0,
 			point.x, point.y, 0, m_hWnd, NULL);
-		//kill process
-		/*if (MessageBox(_T("确定要杀掉此进程吗?"), _T("进程管理系统"), MB_YESNO) == IDYES) {
-			CString pidStr = m_listCtrl.GetItemText(selected, 1);
-			KillProcess(_ttol(pidStr));
-		}*/
 	}
 	*pResult = 0;
+}
+
+
+void CCourseManageMain::InMenuKillProcess()
+{
+	int selected = m_listCtrl.GetSelectionMark();
+	if (selected != -1 && MessageBox(_T("确定要杀掉此进程吗?"), _T("进程管理系统"), MB_YESNO) == IDYES) {
+		CString pidStr = m_listCtrl.GetItemText(selected, 1);
+		KillProcess(_ttol(pidStr));
+	}
+}
+
+
+void CCourseManageMain::InMenuOpenFolder()
+{
+	int selected = m_listCtrl.GetSelectionMark();
+	CString pidStr = m_listCtrl.GetItemText(selected, 1);
+	DWORD processId = _ttol(pidStr);
+	TCHAR str[400] = {0};
+	DWORD size = 400;
+	HANDLE hProcess;
+	hProcess = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_QUERY_LIMITED_INFORMATION,
+		0, processId);
+	if (NULL == hProcess)
+		return;
+	if (QueryFullProcessImageName(hProcess, 0, str, &size))
+	{
+		TCHAR newPath[400] = {0};
+		TCHAR *p_index = _tcsrchr(str, '\\');
+		if (p_index) {
+			memcpy_s(newPath, 400, str, (int)p_index - (int)str);
+			ShellExecute(
+			NULL,
+			_T("open"),
+				newPath,
+			NULL, NULL, SW_SHOWNORMAL);
+		}
+	}
+	CloseHandle(hProcess);
 }

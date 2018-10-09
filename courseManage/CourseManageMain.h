@@ -49,4 +49,6 @@ public:
 	afx_msg void OnBnClickedButtonKillprocess();
 	int KillProcess(DWORD pid);
 	afx_msg void OnNMRClickCourseList(NMHDR *pNMHDR, LRESULT *pResult);
+	afx_msg void InMenuKillProcess();
+	afx_msg void InMenuOpenFolder();
 };
