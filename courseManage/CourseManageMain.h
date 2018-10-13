@@ -11,6 +11,7 @@
 #include <winver.h>
 #include <memory.h>
 #include "CPUusage.h"
+#include "CreateNewProcess.h"
 #pragma comment(lib, "version.lib")
 using namespace std;
 using std::cout;
@@ -51,4 +52,11 @@ public:
 	afx_msg void OnNMRClickCourseList(NMHDR *pNMHDR, LRESULT *pResult);
 	afx_msg void InMenuKillProcess();
 	afx_msg void InMenuOpenFolder();
+	afx_msg void OnRefreshRightNow();
+	void InitProcessList();
+	afx_msg void OnCreateNewProcess();
+	static DWORD m_SortColum;
+	static BOOL m_bAs;
+	static int CALLBACK MyListCompar(LPARAM lParam1, LPARAM lParam2, LPARAM lParamSort);
+	afx_msg void OnLvnColumnclickCourseList(NMHDR *pNMHDR, LRESULT *pResult);
 };

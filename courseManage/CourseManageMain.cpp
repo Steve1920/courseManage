@@ -31,13 +31,12 @@ BOOL CCourseManageMain::ShowProcessList(CListCtrl &pListCtrl, vector<ProcessInfo
 				CString threadCount;
 				threadCount.Format(_T("%d"), tmpProcessInfo.getThreadNums());
 				pListCtrl.SetItemText(iLine, 2, threadCount);
-				/*CString cpuStr;
-				cpuStr.Format(_T("%d"), tmpProcessInfo.getCpu());
-				pListCtrl.SetItemText(iLine, 3, cpuStr);*/
+				CString cpuStr(_T("查询中..."));
+				pListCtrl.SetItemText(iLine, 3, cpuStr);
 				CString memoryStr;
 				memoryStr.Format(_T("%dK"), tmpProcessInfo.getMemory() / 1024);
-				pListCtrl.SetItemText(iLine, 3, memoryStr);
-				pListCtrl.SetItemText(iLine, 4, tmpProcessInfo.getDes());
+				pListCtrl.SetItemText(iLine, 4, memoryStr);
+				pListCtrl.SetItemText(iLine, 5, tmpProcessInfo.getDes());
 			}
 		}
 
@@ -143,6 +142,9 @@ ON_BN_CLICKED(IDC_BUTTON_KILLPROCESS, &CCourseManageMain::OnBnClickedButtonKillp
 ON_NOTIFY(NM_RCLICK, IDC_COURSE_LIST, &CCourseManageMain::OnNMRClickCourseList)
 ON_COMMAND(ID__KILL_PROCESS, &CCourseManageMain::InMenuKillProcess)
 ON_COMMAND(ID__32782, &CCourseManageMain::InMenuOpenFolder)
+ON_COMMAND(ID_32774, &CCourseManageMain::OnRefreshRightNow)
+ON_COMMAND(ID_32771, &CCourseManageMain::OnCreateNewProcess)
+ON_NOTIFY(LVN_COLUMNCLICK, IDC_COURSE_LIST, &CCourseManageMain::OnLvnColumnclickCourseList)
 END_MESSAGE_MAP()
 
 
@@ -159,14 +161,10 @@ BOOL CCourseManageMain::OnInitDialog()
 	m_listCtrl.InsertColumn(0, _T("映像名称"), LVCFMT_LEFT, 160);
 	m_listCtrl.InsertColumn(1, _T("PID"), LVCFMT_LEFT, 45);
 	m_listCtrl.InsertColumn(2, _T("线程数"), LVCFMT_LEFT, 50);
-	//m_listCtrl.InsertColumn(3, _T("CPU"), LVCFMT_LEFT, 45);
-	m_listCtrl.InsertColumn(3, _T("内存(当前工作集)"), LVCFMT_LEFT, 110);
-	m_listCtrl.InsertColumn(4, _T("描述"), LVCFMT_LEFT, 300);
-	processVector processVec;
-	GetProcessInfoVector(processVec);
-	sort(processVec.begin(), processVec.end(), ProcessInfo());
-	ShowProcessList(m_listCtrl, processVec);
-	DestoryProcessInfoVector(processVec);
+	m_listCtrl.InsertColumn(3, _T("安全等级"), LVCFMT_LEFT, 60);
+	m_listCtrl.InsertColumn(4, _T("内存(当前工作集)"), LVCFMT_LEFT, 110);
+	m_listCtrl.InsertColumn(5, _T("描述"), LVCFMT_LEFT, 300);
+	InitProcessList();
 	return TRUE;  // return TRUE unless you set the focus to a control
 				  // 异常: OCX 属性页应返回 FALSE
 }
@@ -174,7 +172,7 @@ BOOL CCourseManageMain::OnInitDialog()
 
 void CCourseManageMain::OnMenuExitClick()
 {
-	MessageBox(L"内容", L"标题", NULL);
+	CDialog::OnCancel();
 }
 
 
@@ -267,8 +265,16 @@ void CCourseManageMain::OnBnClickedButtonKillprocess()
 		//kill process
 		if (MessageBox(_T("确定要杀掉此进程吗?"),_T("进程管理系统"), MB_YESNO) == IDYES) {
 			CString pidStr = m_listCtrl.GetItemText(selected,1);
-			KillProcess(_ttol(pidStr));
+			int result = KillProcess(_ttol(pidStr));
+			if (result) {
+				m_listCtrl.DeleteItem(selected);
+			} else {
+				MessageBox(_T("进程关闭失败!"), _T("进程管理系统"), MB_OK);
+			}
 		}
+	}
+	else {
+		MessageBox(_T("还未选择进程!"), _T("进程管理系统"), MB_OK);
 	}
 }
 
@@ -279,14 +285,15 @@ int CCourseManageMain::KillProcess(DWORD pid)
 		FALSE,
 		pid
 	);
+	BOOL result = FALSE;
 	if (hProcess) {
-		TerminateProcess(
+		result = TerminateProcess(
 			hProcess,
 			0
 		);
 	}
 	CloseHandle(hProcess);
-	return 0;
+	return result ? 1 : 0;
 }
 
 
@@ -314,7 +321,13 @@ void CCourseManageMain::InMenuKillProcess()
 	int selected = m_listCtrl.GetSelectionMark();
 	if (selected != -1 && MessageBox(_T("确定要杀掉此进程吗?"), _T("进程管理系统"), MB_YESNO) == IDYES) {
 		CString pidStr = m_listCtrl.GetItemText(selected, 1);
-		KillProcess(_ttol(pidStr));
+		int result = KillProcess(_ttol(pidStr));
+		if (result) {
+			m_listCtrl.DeleteItem(selected);
+		}
+		else {
+			MessageBox(_T("进程关闭失败!"), _T("进程管理系统"), MB_OK);
+		}
 	}
 }
 
@@ -345,4 +358,76 @@ void CCourseManageMain::InMenuOpenFolder()
 		}
 	}
 	CloseHandle(hProcess);
+}
+
+
+void CCourseManageMain::OnRefreshRightNow()
+{
+	//m_listCtrl.DeleteAllItems();
+	while (m_listCtrl.DeleteItem(0));
+	InitProcessList();
+}
+
+void CCourseManageMain::InitProcessList()
+{
+	processVector processVec;
+	GetProcessInfoVector(processVec);
+	sort(processVec.begin(), processVec.end(), ProcessInfo());
+	ShowProcessList(m_listCtrl, processVec);
+	DestoryProcessInfoVector(processVec);
+}
+
+
+void CCourseManageMain::OnCreateNewProcess()
+{
+	CreateNewProcess createProcess;
+	INT_PTR result = createProcess.DoModal();
+	switch (result)
+	{
+	default:
+		break;
+	}
+}
+DWORD CCourseManageMain::m_SortColum = 0;
+BOOL CCourseManageMain::m_bAs = TRUE;
+int CCourseManageMain::MyListCompar(LPARAM lParam1, LPARAM lParam2, LPARAM lParamSort)
+{
+	CListCtrl* pListCtrl = (CListCtrl*)lParamSort;
+	int   iCompRes;
+	CString  szComp1 = pListCtrl->GetItemText(lParam1, m_SortColum);
+	CString  szComp2 = pListCtrl->GetItemText(lParam2, m_SortColum);
+	switch (m_SortColum)
+	{
+	case(1):
+	case(2):
+		iCompRes = _ttoi(szComp1) <= _ttoi(szComp2) ? -1 : 1;
+		break;
+	case(4):
+		szComp1.Remove('K');
+		szComp2.Remove('K');
+		iCompRes = _ttoi(szComp1) <= _ttoi(szComp2) ? -1 : 1;
+		break;
+	default:
+		iCompRes = szComp1.Compare(szComp2);
+		break;
+	}
+	if (m_bAs)
+		return   iCompRes;
+	else
+		return   -iCompRes;
+}
+
+
+void CCourseManageMain::OnLvnColumnclickCourseList(NMHDR *pNMHDR, LRESULT *pResult)
+{
+	NM_LISTVIEW* pNMListView = (NM_LISTVIEW*)pNMHDR;
+	m_SortColum = pNMListView->iSubItem;
+	m_bAs = !m_bAs;//升序还是降序
+	int count = m_listCtrl.GetItemCount();   //行数
+	for (int i = 0; i<count; i++)
+	{
+		m_listCtrl.SetItemData(i, i);
+	}
+	m_listCtrl.SortItems(MyListCompar, (LPARAM)&m_listCtrl);
+	*pResult = 0;
 }

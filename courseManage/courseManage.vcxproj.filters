@@ -45,6 +45,9 @@
     <ClInclude Include="CPUusage.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="CreateNewProcess.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="courseManage.cpp">
@@ -60,6 +63,9 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="CourseManageMain.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="CreateNewProcess.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
