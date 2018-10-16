@@ -12,6 +12,7 @@
 #include <memory.h>
 #include "CPUusage.h"
 #include "CreateNewProcess.h"
+#include <map>
 #pragma comment(lib, "version.lib")
 using namespace std;
 using std::cout;
@@ -41,9 +42,6 @@ public:
 	afx_msg void OnMenuExitClick();
 	CListCtrl m_listCtrl;
 	int m_selectLineNumber = -1;
-	BOOL ShowProcessList(CListCtrl &pListCtrl, vector<ProcessInfo*> &processVec);
-	BOOL GetProcessInfoVector(vector<ProcessInfo*> &processVec);
-	BOOL DestoryProcessInfoVector(vector<ProcessInfo*> &processVec);
 	virtual BOOL DestroyWindow();
 	int GetMemoryUsage(uint64_t* mem, DWORD processId);
 	int GetInfomation(DWORD processId, CString &info);

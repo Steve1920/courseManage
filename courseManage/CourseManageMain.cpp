@@ -14,115 +14,6 @@ CCourseManageMain::CCourseManageMain(CWnd* pParent /*=NULL*/)
 
 }
 
-BOOL CCourseManageMain::ShowProcessList(CListCtrl &pListCtrl, vector<ProcessInfo*> &processVec)
-{
-	try
-	{
-		processIter processIter;
-		if (processVec.size() > 0) {
-			for (processIter = processVec.begin(); processIter != processVec.end(); ++processIter)
-			{
-				ProcessInfo tmpProcessInfo = *(*processIter);
-				int iLine = pListCtrl.GetItemCount();
-				pListCtrl.InsertItem(iLine, tmpProcessInfo.getImageName());
-				CString processIdStr;
-				processIdStr.Format(_T("%d"), tmpProcessInfo.getPid());
-				pListCtrl.SetItemText(iLine, 1, processIdStr);
-				CString threadCount;
-				threadCount.Format(_T("%d"), tmpProcessInfo.getThreadNums());
-				pListCtrl.SetItemText(iLine, 2, threadCount);
-				CString cpuStr(_T("查询中..."));
-				pListCtrl.SetItemText(iLine, 3, cpuStr);
-				CString memoryStr;
-				memoryStr.Format(_T("%dK"), tmpProcessInfo.getMemory() / 1024);
-				pListCtrl.SetItemText(iLine, 4, memoryStr);
-				pListCtrl.SetItemText(iLine, 5, tmpProcessInfo.getDes());
-			}
-		}
-
-	}
-	catch (const std::exception&)
-	{
-		return(FALSE);
-	}
-	return(TRUE);
-}
-
-BOOL CCourseManageMain::GetProcessInfoVector(vector<ProcessInfo*>& processVec)
-{
-
-	HANDLE hProcessSnap;
-	PROCESSENTRY32 pe32;
-
-	hProcessSnap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
-	if (hProcessSnap == INVALID_HANDLE_VALUE)
-	{
-		cout << TEXT("CreateToolhelp32Snapshot (of processes)") << endl;
-		return(FALSE);
-	}
-
-	// Set the size of the structure before using it.
-	pe32.dwSize = sizeof(PROCESSENTRY32);
-
-	// Retrieve information about the first process,
-	// and exit if unsuccessful
-	if (!Process32First(hProcessSnap, &pe32))
-	{
-		cout << (TEXT("Process32First")) << endl; // show cause of failure
-		CloseHandle(hProcessSnap);          // clean the snapshot object
-		return(FALSE);
-	}
-
-	// Now walk the snapshot of processes, and
-	// display information about each process in turn
-	do
-	{
-		uint64_t mem = 0;
-		int retInt = GetMemoryUsage(&mem, pe32.th32ProcessID);
-		if (retInt == -1) continue;
-		CString info;
-		GetInfomation(pe32.th32ProcessID, info);
-		if (info == _T("")) { 
-			info = pe32.szExeFile;
-		}
-		/*CPUusage usg(pe32.th32ProcessID);
-		float cpu = usg.get_cpu_usage();*/
-		ProcessInfo *pi = new ProcessInfo(pe32.szExeFile, pe32.th32ProcessID,
-			pe32.cntThreads, 0, mem, info);
-		processVec.push_back(pi);
-	} while (Process32Next(hProcessSnap, &pe32));
-	CloseHandle(hProcessSnap);
-	return(TRUE);
-}
-
-BOOL CCourseManageMain::DestoryProcessInfoVector(vector<ProcessInfo*>& processVec)
-{
-	try
-	{
-		processIter processIter;
-		ProcessInfo *tmpProcessInfo = NULL;
-		if (processVec.size() > 0) {
-			for (processIter = processVec.begin(); processIter != processVec.end(); ++processIter)
-			{
-				if (tmpProcessInfo) {
-					delete tmpProcessInfo;
-				}
-				tmpProcessInfo = *processIter;
-			}
-			if (tmpProcessInfo) {
-				delete tmpProcessInfo;
-			}
-		}
-
-	}
-	catch (const std::exception&)
-	{
-		return(FALSE);
-	}
-	return(TRUE);
-}
-
-
 CCourseManageMain::~CCourseManageMain()
 {
 
@@ -324,6 +215,7 @@ void CCourseManageMain::InMenuKillProcess()
 		int result = KillProcess(_ttol(pidStr));
 		if (result) {
 			m_listCtrl.DeleteItem(selected);
+			OnRefreshRightNow();
 		}
 		else {
 			MessageBox(_T("进程关闭失败!"), _T("进程管理系统"), MB_OK);
@@ -363,18 +255,151 @@ void CCourseManageMain::InMenuOpenFolder()
 
 void CCourseManageMain::OnRefreshRightNow()
 {
-	//m_listCtrl.DeleteAllItems();
-	while (m_listCtrl.DeleteItem(0));
-	InitProcessList();
+	map<CString, int> processMap;
+	map<CString, int>::iterator processIter;
+	int count = m_listCtrl.GetItemCount();   //行数
+	for (int i = 0; i<count; i++)
+	{
+		CString pName = m_listCtrl.GetItemText(i, 0);
+		CString pid = m_listCtrl.GetItemText(i, 1);
+		processMap[pName + _T("_") + pid] = i;
+	}
+	HANDLE hProcessSnap;
+	PROCESSENTRY32 pe32;
+	hProcessSnap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+	if (hProcessSnap == INVALID_HANDLE_VALUE)
+	{
+		cout << TEXT("CreateToolhelp32Snapshot (of processes)") << endl;
+		return;
+	}
+	pe32.dwSize = sizeof(PROCESSENTRY32);
+	if (!Process32First(hProcessSnap, &pe32))
+	{
+		cout << (TEXT("Process32First")) << endl; // show cause of failure
+		CloseHandle(hProcessSnap);          // clean the snapshot object
+		return;
+	}
+	BOOL changeFlag = false;
+	do
+	{
+		CString key(pe32.szExeFile);
+		CString pidStr;
+		pidStr.Format(_T("%d"), pe32.th32ProcessID);
+		key += _T("_") + pidStr;
+		processIter = processMap.find(key);
+		uint64_t mem = 0;
+		int retInt = GetMemoryUsage(&mem, pe32.th32ProcessID);
+		if (retInt == -1) continue;
+		if (processIter != processMap.end()) {
+			int nItem = processMap[key];
+			CString threadNums;
+			threadNums.Format(_T("%d"), pe32.cntThreads);
+			CString memStr;
+			memStr.Format(_T("%dK"), mem / 1024);
+			if (threadNums != m_listCtrl.GetItemText(nItem, 2)) {
+				m_listCtrl.SetItemText(nItem, 2, threadNums);
+			}
+			if (memStr != m_listCtrl.GetItemText(nItem, 4)) {
+				m_listCtrl.SetItemText(nItem, 4, memStr);
+			}
+			processMap.erase(key);
+		}
+		else {
+			CString info;
+			GetInfomation(pe32.th32ProcessID, info);
+			if (info == _T("")) {
+				info = pe32.szExeFile;
+			}
+			int iLine = m_listCtrl.GetItemCount();
+			m_listCtrl.InsertItem(iLine, pe32.szExeFile);
+			CString processIdStr;
+			processIdStr.Format(_T("%d"), pe32.th32ProcessID);
+			m_listCtrl.SetItemText(iLine, 1, processIdStr);
+			CString threadCount;
+			threadCount.Format(_T("%d"), pe32.cntThreads);
+			m_listCtrl.SetItemText(iLine, 2, threadCount);
+			CString cpuStr(_T("查询中..."));
+			m_listCtrl.SetItemText(iLine, 3, cpuStr);
+			CString memoryStr;
+			memoryStr.Format(_T("%dK"), mem / 1024);
+			m_listCtrl.SetItemText(iLine, 4, memoryStr);
+			m_listCtrl.SetItemText(iLine, 5, info);
+			changeFlag = true;
+		}
+	} while (Process32Next(hProcessSnap, &pe32));
+	CloseHandle(hProcessSnap);
+	//根据processMap更新m_listCtrl的列表
+	int size = processMap.size();
+	if (size > 0) {
+		for (processIter = processMap.begin(); processIter != processMap.end(); ++processIter)
+			m_listCtrl.DeleteItem((*processIter).second);
+	}
+	if (changeFlag) {
+		int count = m_listCtrl.GetItemCount();   //行数
+		for (int i = 0; i<count; i++)
+		{
+			m_listCtrl.SetItemData(i, i);
+		}
+		m_listCtrl.SortItems(MyListCompar, (LPARAM)&m_listCtrl);
+	}
 }
 
 void CCourseManageMain::InitProcessList()
 {
-	processVector processVec;
-	GetProcessInfoVector(processVec);
-	sort(processVec.begin(), processVec.end(), ProcessInfo());
-	ShowProcessList(m_listCtrl, processVec);
-	DestoryProcessInfoVector(processVec);
+	HANDLE hProcessSnap;
+	PROCESSENTRY32 pe32;
+	hProcessSnap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+	if (hProcessSnap == INVALID_HANDLE_VALUE)
+	{
+		cout << TEXT("CreateToolhelp32Snapshot (of processes)") << endl;
+		return;
+	}
+	// Set the size of the structure before using it.
+	pe32.dwSize = sizeof(PROCESSENTRY32);
+	// Retrieve information about the first process,
+	// and exit if unsuccessful
+	if (!Process32First(hProcessSnap, &pe32))
+	{
+		cout << (TEXT("Process32First")) << endl; // show cause of failure
+		CloseHandle(hProcessSnap);          // clean the snapshot object
+		return;
+	}
+	// Now walk the snapshot of processes, and
+	// display information about each process in turn
+	do
+	{
+		uint64_t mem = 0;
+		int retInt = GetMemoryUsage(&mem, pe32.th32ProcessID);
+		if (retInt == -1) continue;
+		CString info;
+		GetInfomation(pe32.th32ProcessID, info);
+		if (info == _T("")) {
+			info = pe32.szExeFile;
+		}
+		int iLine = m_listCtrl.GetItemCount();
+		m_listCtrl.InsertItem(iLine, pe32.szExeFile);
+		CString processIdStr;
+		processIdStr.Format(_T("%d"), pe32.th32ProcessID);
+		m_listCtrl.SetItemText(iLine, 1, processIdStr);
+		CString threadCount;
+		threadCount.Format(_T("%d"), pe32.cntThreads);
+		m_listCtrl.SetItemText(iLine, 2, threadCount);
+		CString cpuStr(_T("查询中..."));
+		m_listCtrl.SetItemText(iLine, 3, cpuStr);
+		CString memoryStr;
+		memoryStr.Format(_T("%dK"), mem / 1024);
+		m_listCtrl.SetItemText(iLine, 4, memoryStr);
+		m_listCtrl.SetItemText(iLine, 5, info);
+	} while (Process32Next(hProcessSnap, &pe32));
+	CloseHandle(hProcessSnap);
+	//排序
+	m_SortColum = 1;
+	int count = m_listCtrl.GetItemCount();   //行数
+	for (int i = 0; i<count; i++)
+	{
+		m_listCtrl.SetItemData(i, i);
+	}
+	m_listCtrl.SortItems(MyListCompar, (LPARAM)&m_listCtrl);
 }
 
 
