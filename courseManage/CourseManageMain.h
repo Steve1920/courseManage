@@ -43,8 +43,6 @@ public:
 	CListCtrl m_listCtrl;
 	int m_selectLineNumber = -1;
 	virtual BOOL DestroyWindow();
-	int GetMemoryUsage(uint64_t* mem, DWORD processId);
-	int GetInfomation(DWORD processId, CString &info);
 	afx_msg void OnBnClickedButtonKillprocess();
 	int KillProcess(DWORD pid);
 	afx_msg void OnNMRClickCourseList(NMHDR *pNMHDR, LRESULT *pResult);
