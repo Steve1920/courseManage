@@ -42,9 +42,6 @@
     <ClInclude Include="processInfo.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="CPUusage.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="CreateNewProcess.h">
       <Filter>头文件</Filter>
     </ClInclude>

@@ -114,9 +114,14 @@ ON_COMMAND(ID__32782, &CCourseManageMain::InMenuOpenFolder)
 ON_COMMAND(ID_32774, &CCourseManageMain::OnRefreshRightNow)
 ON_COMMAND(ID_32771, &CCourseManageMain::OnCreateNewProcess)
 ON_NOTIFY(LVN_COLUMNCLICK, IDC_COURSE_LIST, &CCourseManageMain::OnLvnColumnclickCourseList)
+ON_COMMAND(ID_REFRESH_HIGH, &CCourseManageMain::OnRefreshHigh)
+ON_COMMAND(ID_REFRESH_NORMAL, &CCourseManageMain::OnRefreshNormal)
+ON_COMMAND(ID_REFRESH_LOW, &CCourseManageMain::OnRefreshLow)
+ON_COMMAND(ID_REFRESH_PAUSE, &CCourseManageMain::OnRefreshPause)
 END_MESSAGE_MAP()
 
 BOOL g_exitFlag = false;
+int m_refreshInterval = 2000;//进程列表刷新频率
 // CCourseManageMain 消息处理程序
 void refreshRightNow(CListCtrl & m_listCtrl) {
 	map<CString, int> processMap;
@@ -210,14 +215,14 @@ void refreshRightNow(CListCtrl & m_listCtrl) {
 UINT AFX_CDECL refreshProcessList(LPVOID param) {
 	while (!g_exitFlag) {
 		refreshRightNow(*(CListCtrl*)param);
-		Sleep(1000);
+		Sleep(m_refreshInterval);
 	}
 	return 0;
 }
 BOOL CCourseManageMain::OnInitDialog()
 {
 	CDialogEx::OnInitDialog();
-	m_cMenu.LoadMenuW(IDR_MENU_INSERTMAIN);
+	m_cMenu.LoadMenu(IDR_MENU_INSERTMAIN);
 	this->SetMenu(&m_cMenu);
 	m_listCtrl.SetExtendedStyle(LVS_EX_FULLROWSELECT);
 	m_listCtrl.InsertColumn(0, _T("映像名称"), LVCFMT_LEFT, 160);
@@ -228,6 +233,7 @@ BOOL CCourseManageMain::OnInitDialog()
 	m_listCtrl.InsertColumn(5, _T("描述"), LVCFMT_LEFT, 300);
 	InitProcessList();
 	AfxBeginThread(refreshProcessList,(LPVOID)&m_listCtrl);
+	checkMenuItem(ID_REFRESH_NORMAL);
 	return TRUE;  // return TRUE unless you set the focus to a control
 				  // 异常: OCX 属性页应返回 FALSE
 }
@@ -311,7 +317,7 @@ void CCourseManageMain::InMenuKillProcess()
 		int result = KillProcess(_ttol(pidStr));
 		if (result) {
 			m_listCtrl.DeleteItem(selected);
-			OnRefreshRightNow();
+			//OnRefreshRightNow();
 		}
 		else {
 			MessageBox(_T("进程关闭失败!"), _T("进程管理系统"), MB_OK);
@@ -465,4 +471,55 @@ void CCourseManageMain::OnLvnColumnclickCourseList(NMHDR *pNMHDR, LRESULT *pResu
 	}
 	m_listCtrl.SortItems(MyListCompar, (LPARAM)&m_listCtrl);
 	*pResult = 0;
+}
+
+BOOL CCourseManageMain::checkMenuItem(UINT itemId) {
+	BOOL result = CheckMenuRadioItem(m_cMenu.m_hMenu, ID_REFRESH_HIGH, ID_REFRESH_PAUSE, itemId, MF_BYCOMMAND);
+	switch (itemId)
+	{
+	case ID_REFRESH_HIGH:
+		m_refreshInterval = 1000;
+		break;
+	case ID_REFRESH_NORMAL:
+		m_refreshInterval = 2000;
+		break;
+	case ID_REFRESH_LOW:
+		m_refreshInterval = 3000;
+		break;
+	case ID_REFRESH_PAUSE:
+		g_exitFlag = true;
+		break;
+	default:
+		break;
+	}
+	if (itemId != ID_REFRESH_PAUSE) {
+		if (g_exitFlag) {
+			AfxBeginThread(refreshProcessList, (LPVOID)&m_listCtrl);
+			g_exitFlag = false;
+		}
+	}
+	return result;
+}
+
+void CCourseManageMain::OnRefreshHigh()
+{
+	checkMenuItem(ID_REFRESH_HIGH);
+}
+
+
+void CCourseManageMain::OnRefreshNormal()
+{
+	checkMenuItem(ID_REFRESH_NORMAL);
+}
+
+
+void CCourseManageMain::OnRefreshLow()
+{
+	checkMenuItem(ID_REFRESH_LOW);
+}
+
+
+void CCourseManageMain::OnRefreshPause()
+{
+	checkMenuItem(ID_REFRESH_PAUSE);
 }

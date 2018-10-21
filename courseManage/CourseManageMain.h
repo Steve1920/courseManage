@@ -10,7 +10,6 @@
 #include <algorithm>
 #include <winver.h>
 #include <memory.h>
-#include "CPUusage.h"
 #include "CreateNewProcess.h"
 #include <map>
 #pragma comment(lib, "version.lib")
@@ -35,7 +34,6 @@ public:
 
 protected:
 	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV Ö§³Ö
-
 	DECLARE_MESSAGE_MAP()
 public:
 	virtual BOOL OnInitDialog();
@@ -55,4 +53,9 @@ public:
 	static BOOL m_bAs;
 	static int CALLBACK MyListCompar(LPARAM lParam1, LPARAM lParam2, LPARAM lParamSort);
 	afx_msg void OnLvnColumnclickCourseList(NMHDR *pNMHDR, LRESULT *pResult);
+	afx_msg void OnRefreshHigh();
+	afx_msg void OnRefreshNormal();
+	afx_msg void OnRefreshLow();
+	afx_msg void OnRefreshPause();
+	BOOL checkMenuItem(UINT itemId);
 };

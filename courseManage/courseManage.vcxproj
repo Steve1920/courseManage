@@ -189,7 +189,6 @@
     <ClInclude Include="courseManageDlg.h" />
     <ClInclude Include="CourseManageMain.h" />
     <ClInclude Include="CourseManageRegist.h" />
-    <ClInclude Include="CPUusage.h" />
     <ClInclude Include="CreateNewProcess.h" />
     <ClInclude Include="processInfo.h" />
     <ClInclude Include="Resource.h" />
