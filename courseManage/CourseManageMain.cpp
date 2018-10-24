@@ -118,6 +118,7 @@ ON_COMMAND(ID_REFRESH_HIGH, &CCourseManageMain::OnRefreshHigh)
 ON_COMMAND(ID_REFRESH_NORMAL, &CCourseManageMain::OnRefreshNormal)
 ON_COMMAND(ID_REFRESH_LOW, &CCourseManageMain::OnRefreshLow)
 ON_COMMAND(ID_REFRESH_PAUSE, &CCourseManageMain::OnRefreshPause)
+ON_COMMAND(ID_ABOUTBOX, &CCourseManageMain::OnAboutbox)
 END_MESSAGE_MAP()
 
 BOOL g_exitFlag = false;
@@ -522,4 +523,11 @@ void CCourseManageMain::OnRefreshLow()
 void CCourseManageMain::OnRefreshPause()
 {
 	checkMenuItem(ID_REFRESH_PAUSE);
+}
+
+
+void CCourseManageMain::OnAboutbox()
+{
+	CAboutBox abox;
+	abox.DoModal();
 }

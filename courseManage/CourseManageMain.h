@@ -11,6 +11,7 @@
 #include <winver.h>
 #include <memory.h>
 #include "CreateNewProcess.h"
+#include "AboutBox.h"
 #include <map>
 #pragma comment(lib, "version.lib")
 using namespace std;
@@ -58,4 +59,5 @@ public:
 	afx_msg void OnRefreshLow();
 	afx_msg void OnRefreshPause();
 	BOOL checkMenuItem(UINT itemId);
+	afx_msg void OnAboutbox();
 };

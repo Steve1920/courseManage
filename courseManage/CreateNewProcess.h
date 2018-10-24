@@ -20,4 +20,10 @@ protected:
 	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV Ö§³Ö
 
 	DECLARE_MESSAGE_MAP()
+public:
+	afx_msg void OnBnClickedButtonView();
+	CString m_exePath;
+	afx_msg void OnBnClickedOk();
+	afx_msg void OnEnChangeProcessPath();
+	afx_msg void OnDropFiles(HDROP hDropInfo);
 };
