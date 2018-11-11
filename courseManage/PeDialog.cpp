@@ -216,13 +216,43 @@ void CPeDialog::parsePe()
 {
 	int result = validPeVerify();
 	if (result == 1) {
-		parseDosHeader();
+		int ntOffset = parseDosHeader();
+		parseNtHeader(ntOffset);
 	}else if(result == 0){
 		MessageBox(_T("非PE格式文件，无法解析"), _T("消息框"), MB_OK);
 	}
 }
-
-void CPeDialog::parseDosHeader()
+void createfileHeaderLine(int row, CString name, int offset, CString &sizeStr, LONG value, CGridCtrl &dosHeaderCtrl) {
+	makeItemToCtrl(dosHeaderCtrl, row, 0, name);
+	CString offsetStrMagic;
+	offsetStrMagic.Format(_T("%08X"), offset);
+	makeItemToCtrl(dosHeaderCtrl, row, 1, offsetStrMagic);
+	makeItemToCtrl(dosHeaderCtrl, row, 2, sizeStr);
+	CString magicStr;
+	if (row == 3 || row == 4 || row == 5) {
+		magicStr.Format(_T("%08X"), value);
+	}
+	else {
+		magicStr.Format(_T("%04X"), value);
+	}
+	makeItemToCtrl(dosHeaderCtrl, row, 3, magicStr);
+}
+void createDosHeaderLine(int row,CString name,int offset,CString &sizeStr,LONG value,CGridCtrl &dosHeaderCtrl) {
+	makeItemToCtrl(dosHeaderCtrl, row, 0, name);
+	CString offsetStrMagic;
+	offsetStrMagic.Format(_T("%08X"), offset);
+	makeItemToCtrl(dosHeaderCtrl, row, 1, offsetStrMagic);
+	makeItemToCtrl(dosHeaderCtrl, row, 2, sizeStr);
+	CString magicStr;
+	if (name == _T("e_lfanew") || name == _T("Signature")) {
+		magicStr.Format(_T("%08X"), value);
+	}
+	else {
+		magicStr.Format(_T("%04X"), value);
+	}
+	makeItemToCtrl(dosHeaderCtrl, row, 3, magicStr);
+}
+int CPeDialog::parseDosHeader()
 {
 	m_dosHeaderCtrl.SetEditable(true);
 	m_dosHeaderCtrl.SetTextBkColor(RGB(0xFF, 0xFF, 0xE0));//黄色背景
@@ -245,14 +275,156 @@ void CPeDialog::parseDosHeader()
 	BOOL result = file.Open(m_exeFullPath, CFile::modeRead);
 	int offsetTmp = 0;
 	if (result) {
+		CString sizeStrAry[4] = {_T("Byte"),_T("Word"),_T("") ,_T("Dword") };
 		int peResult = 0;
 		IMAGE_DOS_HEADER dosHeader;
 		file.Read(&dosHeader, sizeof(dosHeader));
-		makeItemToCtrl(m_dosHeaderCtrl, 1, 0, _T("e_magic"));
-		CString offsetStr;
-		offsetStr.Format(_T("%08X"), offsetTmp);
-		makeItemToCtrl(m_dosHeaderCtrl, 1, 1, offsetStr);
-		makeItemToCtrl(m_dosHeaderCtrl, 2, 0, _T("e_cblp"));
+		createDosHeaderLine(1, _T("e_magic"), offsetTmp, sizeStrAry[sizeof(dosHeader.e_magic) - 1], dosHeader.e_magic, m_dosHeaderCtrl);
+		offsetTmp += sizeof(dosHeader.e_magic);
+		createDosHeaderLine(2, _T("e_cblp"), offsetTmp, sizeStrAry[sizeof(dosHeader.e_cblp) - 1], dosHeader.e_cblp, m_dosHeaderCtrl);
+		offsetTmp += sizeof(dosHeader.e_cblp);
+		createDosHeaderLine(3, _T("e_cp"), offsetTmp, sizeStrAry[sizeof(dosHeader.e_cp) - 1], dosHeader.e_cp, m_dosHeaderCtrl);
+		offsetTmp += sizeof(dosHeader.e_cp);
+		createDosHeaderLine(4, _T("e_crlc"), offsetTmp, sizeStrAry[sizeof(dosHeader.e_crlc) - 1], dosHeader.e_crlc, m_dosHeaderCtrl);
+		offsetTmp += sizeof(dosHeader.e_crlc);
+		createDosHeaderLine(5, _T("e_cparhdr"), offsetTmp, sizeStrAry[sizeof(dosHeader.e_cparhdr) - 1], dosHeader.e_cparhdr, m_dosHeaderCtrl);
+		offsetTmp += sizeof(dosHeader.e_cparhdr);
+		createDosHeaderLine(6, _T("e_minalloc"), offsetTmp, sizeStrAry[sizeof(dosHeader.e_minalloc) - 1], dosHeader.e_minalloc, m_dosHeaderCtrl);
+		offsetTmp += sizeof(dosHeader.e_minalloc);
+		createDosHeaderLine(7, _T("e_maxalloc"), offsetTmp, sizeStrAry[sizeof(dosHeader.e_maxalloc) - 1], dosHeader.e_maxalloc, m_dosHeaderCtrl);
+		offsetTmp += sizeof(dosHeader.e_maxalloc);
+		createDosHeaderLine(8, _T("e_ss"), offsetTmp, sizeStrAry[sizeof(dosHeader.e_ss) - 1], dosHeader.e_ss, m_dosHeaderCtrl);
+		offsetTmp += sizeof(dosHeader.e_ss);
+		createDosHeaderLine(9, _T("e_sp"), offsetTmp, sizeStrAry[sizeof(dosHeader.e_sp) - 1], dosHeader.e_sp, m_dosHeaderCtrl);
+		offsetTmp += sizeof(dosHeader.e_sp);
+		createDosHeaderLine(10, _T("e_csum"), offsetTmp, sizeStrAry[sizeof(dosHeader.e_csum) - 1], dosHeader.e_csum, m_dosHeaderCtrl);
+		offsetTmp += sizeof(dosHeader.e_csum);
+		createDosHeaderLine(11, _T("e_ip"), offsetTmp, sizeStrAry[sizeof(dosHeader.e_ip) - 1], dosHeader.e_ip, m_dosHeaderCtrl);
+		offsetTmp += sizeof(dosHeader.e_ip);
+		createDosHeaderLine(12, _T("e_cs"), offsetTmp, sizeStrAry[sizeof(dosHeader.e_cs) - 1], dosHeader.e_cs, m_dosHeaderCtrl);
+		offsetTmp += sizeof(dosHeader.e_cs);
+		createDosHeaderLine(13, _T("e_lfarlc"), offsetTmp, sizeStrAry[sizeof(dosHeader.e_lfarlc) - 1], dosHeader.e_lfarlc, m_dosHeaderCtrl);
+		offsetTmp += sizeof(dosHeader.e_lfarlc);
+		createDosHeaderLine(14, _T("e_ovno"), offsetTmp, sizeStrAry[sizeof(dosHeader.e_ovno) - 1], dosHeader.e_ovno, m_dosHeaderCtrl);
+		offsetTmp += sizeof(dosHeader.e_ovno);
+		createDosHeaderLine(15, _T("e_res"), offsetTmp, sizeStrAry[sizeof(dosHeader.e_res[0]) - 1], dosHeader.e_res[0], m_dosHeaderCtrl);
+		offsetTmp += sizeof(dosHeader.e_res[0]);
+		createDosHeaderLine(16, _T(""), offsetTmp, sizeStrAry[sizeof(dosHeader.e_res[1]) - 1], dosHeader.e_res[1], m_dosHeaderCtrl);
+		offsetTmp += sizeof(dosHeader.e_res[1]);
+		createDosHeaderLine(17, _T(""), offsetTmp, sizeStrAry[sizeof(dosHeader.e_res[2]) - 1], dosHeader.e_res[2], m_dosHeaderCtrl);
+		offsetTmp += sizeof(dosHeader.e_res[2]);
+		createDosHeaderLine(18, _T(""), offsetTmp, sizeStrAry[sizeof(dosHeader.e_res[3]) - 1], dosHeader.e_res[3], m_dosHeaderCtrl);
+		offsetTmp += sizeof(dosHeader.e_res[3]);
+		createDosHeaderLine(19, _T("e_oemid"), offsetTmp, sizeStrAry[sizeof(dosHeader.e_oemid) - 1], dosHeader.e_oemid, m_dosHeaderCtrl);
+		offsetTmp += sizeof(dosHeader.e_oemid);
+		createDosHeaderLine(20, _T("e_oeminfo"), offsetTmp, sizeStrAry[sizeof(dosHeader.e_oeminfo) - 1], dosHeader.e_oeminfo, m_dosHeaderCtrl);
+		offsetTmp += sizeof(dosHeader.e_oeminfo);
+		createDosHeaderLine(21, _T("e_res2"), offsetTmp, sizeStrAry[sizeof(dosHeader.e_res2[0]) - 1], dosHeader.e_res2[0], m_dosHeaderCtrl);
+		offsetTmp += sizeof(dosHeader.e_res2[0]);
+		createDosHeaderLine(22, _T(""), offsetTmp, sizeStrAry[sizeof(dosHeader.e_res2[1]) - 1], dosHeader.e_res2[1], m_dosHeaderCtrl);
+		offsetTmp += sizeof(dosHeader.e_res2[1]);
+		createDosHeaderLine(23, _T(""), offsetTmp, sizeStrAry[sizeof(dosHeader.e_res2[2]) - 1], dosHeader.e_res2[2], m_dosHeaderCtrl);
+		offsetTmp += sizeof(dosHeader.e_res2[2]);
+		createDosHeaderLine(24, _T(""), offsetTmp, sizeStrAry[sizeof(dosHeader.e_res2[3]) - 1], dosHeader.e_res2[3], m_dosHeaderCtrl);
+		offsetTmp += sizeof(dosHeader.e_res2[3]);
+		createDosHeaderLine(25, _T(""), offsetTmp, sizeStrAry[sizeof(dosHeader.e_res2[4]) - 1], dosHeader.e_res2[4], m_dosHeaderCtrl);
+		offsetTmp += sizeof(dosHeader.e_res2[4]);
+		createDosHeaderLine(26, _T(""), offsetTmp, sizeStrAry[sizeof(dosHeader.e_res2[5]) - 1], dosHeader.e_res2[5], m_dosHeaderCtrl);
+		offsetTmp += sizeof(dosHeader.e_res2[5]);
+		createDosHeaderLine(27, _T(""), offsetTmp, sizeStrAry[sizeof(dosHeader.e_res2[6]) - 1], dosHeader.e_res2[6], m_dosHeaderCtrl);
+		offsetTmp += sizeof(dosHeader.e_res2[6]);
+		createDosHeaderLine(28, _T(""), offsetTmp, sizeStrAry[sizeof(dosHeader.e_res2[7]) - 1], dosHeader.e_res2[7], m_dosHeaderCtrl);
+		offsetTmp += sizeof(dosHeader.e_res2[7]);
+		createDosHeaderLine(29, _T(""), offsetTmp, sizeStrAry[sizeof(dosHeader.e_res2[8]) - 1], dosHeader.e_res2[8], m_dosHeaderCtrl);
+		offsetTmp += sizeof(dosHeader.e_res2[8]);
+		createDosHeaderLine(30, _T(""), offsetTmp, sizeStrAry[sizeof(dosHeader.e_res2[9]) - 1], dosHeader.e_res2[9], m_dosHeaderCtrl);
+		offsetTmp += sizeof(dosHeader.e_res2[9]);
+		createDosHeaderLine(31, _T("e_lfanew"), offsetTmp, sizeStrAry[sizeof(dosHeader.e_lfanew) - 1], dosHeader.e_lfanew, m_dosHeaderCtrl);
+		offsetTmp += sizeof(dosHeader.e_lfanew);
+		file.Close();
+		return dosHeader.e_lfanew;
+	}
+	else {
+		MessageBox(_T("打开文件失败"), _T("消息框"), MB_OK);
+		return 0;
+	}
+}
+void CPeDialog::parseNtHeader(int ntOffset)
+{
+	m_ntHeadersCtrl.SetEditable(true);
+	m_ntHeadersCtrl.SetTextBkColor(RGB(0xFF, 0xFF, 0xE0));//黄色背景
+	m_ntHeadersCtrl.SetRowCount(2);
+	m_ntHeadersCtrl.SetColumnCount(4);
+	m_ntHeadersCtrl.SetFixedRowCount(1);
+	m_ntHeadersCtrl.SetFixedColumnCount(3);
+	makeItemToCtrl(m_ntHeadersCtrl, 0, 0, _T("Member"));
+	makeItemToCtrl(m_ntHeadersCtrl, 0, 1, _T("Offset"));
+	makeItemToCtrl(m_ntHeadersCtrl, 0, 2, _T("Size"));
+	makeItemToCtrl(m_ntHeadersCtrl, 0, 3, _T("Value"));
+	for (int row = 0; row < m_ntHeadersCtrl.GetRowCount(); row++) {
+		for (int col = 0; col < m_ntHeadersCtrl.GetColumnCount(); col++)
+		{
+			m_ntHeadersCtrl.SetRowHeight(row, 25); //设置各行高          
+			m_ntHeadersCtrl.SetColumnWidth(col, 100); //设置各列宽
+		}
+	}
+	CFile file;
+	BOOL result = file.Open(m_exeFullPath, CFile::modeRead);
+	int offsetTmp = ntOffset;
+	if (result) {
+		CString sizeStrAry[4] = { _T("Byte"),_T("Word"),_T("") ,_T("Dword") };
+		file.Seek(ntOffset,CFile::begin);
+		DWORD signature;
+		IMAGE_FILE_HEADER fileHeader;
+		file.Read(&signature,sizeof(signature));
+		createDosHeaderLine(1, _T("Signature"), ntOffset, sizeStrAry[sizeof(signature) - 1], signature, m_ntHeadersCtrl);
+		offsetTmp += sizeof(signature);
+		//parse file header
+		file.Read(&fileHeader, sizeof(fileHeader));
+		m_fileHeaderCtrl.SetEditable(true);
+		m_fileHeaderCtrl.SetTextBkColor(RGB(0xFF, 0xFF, 0xE0));//黄色背景
+		m_fileHeaderCtrl.SetRowCount(8);
+		m_fileHeaderCtrl.SetColumnCount(5);
+		m_fileHeaderCtrl.SetFixedRowCount(1);
+		m_fileHeaderCtrl.SetFixedColumnCount(3);
+		makeItemToCtrl(m_fileHeaderCtrl, 0, 0, _T("Member"));
+		makeItemToCtrl(m_fileHeaderCtrl, 0, 1, _T("Offset"));
+		makeItemToCtrl(m_fileHeaderCtrl, 0, 2, _T("Size"));
+		makeItemToCtrl(m_fileHeaderCtrl, 0, 3, _T("Value"));
+		makeItemToCtrl(m_fileHeaderCtrl, 0, 4, _T("Meaning"));
+		for (int row = 0; row < m_fileHeaderCtrl.GetRowCount(); row++) {
+			for (int col = 0; col < m_fileHeaderCtrl.GetColumnCount(); col++)
+			{
+				m_fileHeaderCtrl.SetRowHeight(row, 25); //设置各行高  
+				if (col == 0) {
+					m_fileHeaderCtrl.SetColumnWidth(col, 170); //设置各列宽
+				}
+				else {
+					m_fileHeaderCtrl.SetColumnWidth(col, 100); //设置各列宽
+				}
+				if (col == m_fileHeaderCtrl.GetColumnCount() - 1) {
+					m_fileHeaderCtrl.SetItemState(row, col, m_fileHeaderCtrl.GetItemState(row, col) | GVIS_READONLY);
+				}
+			}
+		}
+		m_fileHeaderCtrl.SetItemBkColour(1, 3, RGB(174, 197, 232));
+		m_fileHeaderCtrl.SetItemBkColour(1, 4, RGB(174, 197, 232));
+		m_fileHeaderCtrl.SetItemBkColour(7, 3, RGB(174, 197, 232));
+		m_fileHeaderCtrl.SetItemBkColour(7, 4, RGB(174, 197, 232));
+		createfileHeaderLine(1, _T(" Machine"), offsetTmp, sizeStrAry[sizeof(fileHeader.Machine) - 1], fileHeader.Machine, m_fileHeaderCtrl);
+		offsetTmp += sizeof(fileHeader.Machine);
+		createfileHeaderLine(2, _T(" NumberOfSections"), offsetTmp, sizeStrAry[sizeof(fileHeader.NumberOfSections) - 1], fileHeader.NumberOfSections, m_fileHeaderCtrl);
+		offsetTmp += sizeof(fileHeader.NumberOfSections);
+		createfileHeaderLine(3, _T("TimeDateStamp"), offsetTmp, sizeStrAry[sizeof(fileHeader.TimeDateStamp) - 1], fileHeader.TimeDateStamp, m_fileHeaderCtrl);
+		offsetTmp += sizeof(fileHeader.TimeDateStamp);
+		createfileHeaderLine(4, _T("PointerToSymbolTable"), offsetTmp, sizeStrAry[sizeof(fileHeader.PointerToSymbolTable) - 1], fileHeader.PointerToSymbolTable, m_fileHeaderCtrl);
+		offsetTmp += sizeof(fileHeader.PointerToSymbolTable);
+		createfileHeaderLine(5, _T("NumberOfSymbols"), offsetTmp, sizeStrAry[sizeof(fileHeader.NumberOfSymbols) - 1], fileHeader.NumberOfSymbols, m_fileHeaderCtrl);
+		offsetTmp += sizeof(fileHeader.NumberOfSymbols);
+		createfileHeaderLine(6, _T(" SizeOfOptionalHeader"), offsetTmp, sizeStrAry[sizeof(fileHeader.SizeOfOptionalHeader) - 1], fileHeader.SizeOfOptionalHeader, m_fileHeaderCtrl);
+		offsetTmp += sizeof(fileHeader.SizeOfOptionalHeader);
+		createfileHeaderLine(7, _T(" Characteristics"), offsetTmp, sizeStrAry[sizeof(fileHeader.Characteristics) - 1], fileHeader.Characteristics, m_fileHeaderCtrl);
+		offsetTmp += sizeof(fileHeader.Characteristics);
 		file.Close();
 		return;
 	}

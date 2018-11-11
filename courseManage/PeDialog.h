@@ -54,7 +54,8 @@ public:
 	CGridCtrl m_dataDirectoriesCtrl;
 	CGridCtrl m_sectionHeadersCtrl;
 	void parsePe();
-	void parseDosHeader();
+	int parseDosHeader();
+	void parseNtHeader(int ntOffset);
 	int validPeVerify();
 	int currentSel;
 };
