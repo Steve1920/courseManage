@@ -1,7 +1,6 @@
 #pragma once
 #include "afxcmn.h"
 #include "GridCtrl_src\GridCtrl.h"
-#include "C:\数据\工作空间\vs2015\courseManage\courseManage\GridCtrl_src\GridCtrl.h"
 // CPeDialog 对话框
 
 class CPeDialog : public CDialogEx

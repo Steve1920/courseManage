@@ -241,6 +241,25 @@ void CPeDialog::parseDosHeader()
 			m_dosHeaderCtrl.SetColumnWidth(col, 100); //设置各列宽
 		}
 	}
+	CFile file;
+	BOOL result = file.Open(m_exeFullPath, CFile::modeRead);
+	int offsetTmp = 0;
+	if (result) {
+		int peResult = 0;
+		IMAGE_DOS_HEADER dosHeader;
+		file.Read(&dosHeader, sizeof(dosHeader));
+		makeItemToCtrl(m_dosHeaderCtrl, 1, 0, _T("e_magic"));
+		CString offsetStr;
+		offsetStr.Format(_T("%08X"), offsetTmp);
+		makeItemToCtrl(m_dosHeaderCtrl, 1, 1, offsetStr);
+		makeItemToCtrl(m_dosHeaderCtrl, 2, 0, _T("e_cblp"));
+		file.Close();
+		return;
+	}
+	else {
+		MessageBox(_T("打开文件失败"), _T("消息框"), MB_OK);
+		return;
+	}
 }
 //-1 打开文件失败 0 非pe文件 1 是合法PE
 int CPeDialog::validPeVerify()
