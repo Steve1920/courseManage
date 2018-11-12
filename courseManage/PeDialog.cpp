@@ -222,21 +222,7 @@ void CPeDialog::parsePe()
 		MessageBox(_T("非PE格式文件，无法解析"), _T("消息框"), MB_OK);
 	}
 }
-void createfileHeaderLine(int row, CString name, int offset, CString &sizeStr, LONG value, CGridCtrl &dosHeaderCtrl) {
-	makeItemToCtrl(dosHeaderCtrl, row, 0, name);
-	CString offsetStrMagic;
-	offsetStrMagic.Format(_T("%08X"), offset);
-	makeItemToCtrl(dosHeaderCtrl, row, 1, offsetStrMagic);
-	makeItemToCtrl(dosHeaderCtrl, row, 2, sizeStr);
-	CString magicStr;
-	if (row == 3 || row == 4 || row == 5) {
-		magicStr.Format(_T("%08X"), value);
-	}
-	else {
-		magicStr.Format(_T("%04X"), value);
-	}
-	makeItemToCtrl(dosHeaderCtrl, row, 3, magicStr);
-}
+
 void createDosHeaderLine(int row,CString name,int offset,CString &sizeStr,LONG value,CGridCtrl &dosHeaderCtrl) {
 	makeItemToCtrl(dosHeaderCtrl, row, 0, name);
 	CString offsetStrMagic;
@@ -347,6 +333,121 @@ int CPeDialog::parseDosHeader()
 	else {
 		MessageBox(_T("打开文件失败"), _T("消息框"), MB_OK);
 		return 0;
+	}
+}
+void createfileHeaderLine(int row, CString name, int offset, CString &sizeStr, LONG value, CGridCtrl &dosHeaderCtrl) {
+	makeItemToCtrl(dosHeaderCtrl, row, 0, name);
+	CString offsetStrMagic;
+	offsetStrMagic.Format(_T("%08X"), offset);
+	makeItemToCtrl(dosHeaderCtrl, row, 1, offsetStrMagic);
+	makeItemToCtrl(dosHeaderCtrl, row, 2, sizeStr);
+	CString magicStr;
+	if (row == 3 || row == 4 || row == 5) {
+		magicStr.Format(_T("%08X"), value);
+	}
+	else {
+		magicStr.Format(_T("%04X"), value);
+	}
+	makeItemToCtrl(dosHeaderCtrl, row, 3, magicStr);
+	if (row == 1) {
+		CString meaningStr;
+		switch (value)
+		{
+		case IMAGE_FILE_MACHINE_UNKNOWN:
+			meaningStr = _T("unknown value");
+			break;
+		case IMAGE_FILE_MACHINE_I386:
+			meaningStr = _T("Intel 386.");
+			break;
+		case IMAGE_FILE_MACHINE_R3000:
+			meaningStr = _T("MIPS little-endian, 0x160 big-endian");
+			break;
+		case IMAGE_FILE_MACHINE_R4000:
+			meaningStr = _T("MIPS little-endian");
+			break;
+		case IMAGE_FILE_MACHINE_R10000:
+			meaningStr = _T("MIPS little-endian");
+			break;
+		case IMAGE_FILE_MACHINE_WCEMIPSV2:
+			meaningStr = _T("MIPS little-endian WCE v2");
+			break;
+		case IMAGE_FILE_MACHINE_ALPHA:
+			meaningStr = _T("Alpha_AXP");
+			break;
+		case IMAGE_FILE_MACHINE_SH3:
+			meaningStr = _T("SH3 little-endian");
+			break;
+		case IMAGE_FILE_MACHINE_SH3DSP:
+			meaningStr = _T("");
+			break;
+		case IMAGE_FILE_MACHINE_SH3E:
+			meaningStr = _T("SH3E little-endian");
+			break;
+		case IMAGE_FILE_MACHINE_SH4:
+			meaningStr = _T("SH4 little-endian");
+			break;
+		case IMAGE_FILE_MACHINE_SH5:
+			meaningStr = _T("SH5");
+			break;
+		case IMAGE_FILE_MACHINE_ARM:
+			meaningStr = _T("ARM Little-Endian");
+			break;
+		case IMAGE_FILE_MACHINE_THUMB:
+			meaningStr = _T("ARM Thumb/Thumb-2 Little-Endian");
+			break;
+		case IMAGE_FILE_MACHINE_ARMNT:
+			meaningStr = _T("ARM Thumb-2 Little-Endian");
+			break;
+		case IMAGE_FILE_MACHINE_AM33:
+			meaningStr = _T("");
+			break;
+		case IMAGE_FILE_MACHINE_POWERPC:
+			meaningStr = _T("IBM PowerPC Little-Endian");
+			break;
+		case IMAGE_FILE_MACHINE_POWERPCFP:
+			meaningStr = _T("");
+			break;
+		case IMAGE_FILE_MACHINE_IA64:
+			meaningStr = _T("Intel 64");
+			break;
+		case IMAGE_FILE_MACHINE_MIPS16:
+			meaningStr = _T("MIPS");
+			break;
+		case IMAGE_FILE_MACHINE_ALPHA64:
+			meaningStr = _T("ALPHA64");
+			break;
+		case IMAGE_FILE_MACHINE_MIPSFPU:
+			meaningStr = _T("MIPS");
+			break;
+		case IMAGE_FILE_MACHINE_MIPSFPU16:
+			meaningStr = _T("MIPS");
+			break;
+		case IMAGE_FILE_MACHINE_TRICORE:
+			meaningStr = _T("Infineon");
+			break;
+		case IMAGE_FILE_MACHINE_CEF:
+			meaningStr = _T("");
+			break;
+		case IMAGE_FILE_MACHINE_EBC:
+			meaningStr = _T("EFI Byte Code");
+			break;
+		case IMAGE_FILE_MACHINE_AMD64:
+			meaningStr = _T("AMD64 (K8)");
+			break;
+		case IMAGE_FILE_MACHINE_M32R:
+			meaningStr = _T("M32R little-endian");
+			break;
+		case IMAGE_FILE_MACHINE_CEE:
+			meaningStr = _T("");
+			break;
+		default:
+			meaningStr = _T("");
+			break;
+		}
+		makeItemToCtrl(dosHeaderCtrl, row, 4, meaningStr);
+	}
+	else {
+		makeItemToCtrl(dosHeaderCtrl, row, 4, _T(""));
 	}
 }
 void CPeDialog::parseNtHeader(int ntOffset)
