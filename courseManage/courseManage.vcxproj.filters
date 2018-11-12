@@ -96,6 +96,9 @@
     <ClInclude Include="NewCellTypes\GridURLCell.h">
       <Filter>头文件\include</Filter>
     </ClInclude>
+    <ClInclude Include="Characteristics.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="courseManage.cpp">
@@ -154,6 +157,9 @@
     </ClCompile>
     <ClCompile Include="GridCtrl_src\TitleTip.cpp">
       <Filter>源文件\include</Filter>
+    </ClCompile>
+    <ClCompile Include="Characteristics.cpp">
+      <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

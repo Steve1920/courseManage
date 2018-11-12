@@ -47,6 +47,7 @@ public:
 	HTREEITEM m_dataDirectories;
 	HTREEITEM m_sectionHeaders;
 	afx_msg void OnTvnSelchangedTreeHeaders(NMHDR *pNMHDR, LRESULT *pResult);
+	afx_msg void OnCharacteristicsClick(NMHDR *pNotifyStruct, LRESULT* pResult);
 	CGridCtrl m_dosHeaderCtrl;
 	CGridCtrl m_ntHeadersCtrl;
 	CGridCtrl m_fileHeaderCtrl;

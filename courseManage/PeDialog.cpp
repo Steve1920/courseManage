@@ -46,6 +46,7 @@ BEGIN_MESSAGE_MAP(CPeDialog, CDialogEx)
 //	ON_NOTIFY(TVN_SELCHANGED, IDC_TREE_HEADERS, &CPeDialog::OnSelchangedTreeHeaders)
 //ON_NOTIFY(NM_CLICK, IDC_TREE_HEADERS, &CPeDialog::OnNMClickTreeHeaders)
 ON_NOTIFY(TVN_SELCHANGED, IDC_TREE_HEADERS, &CPeDialog::OnTvnSelchangedTreeHeaders)
+ON_NOTIFY(NM_CLICK, IDC_FILE_HEADER_CTRL, &CPeDialog::OnCharacteristicsClick)
 END_MESSAGE_MAP()
 
 
@@ -80,6 +81,7 @@ BOOL CPeDialog::OnInitDialog()
 	for (size_t i = 0; i < 6; i++)
 	{
 		m_peDetailPages[i]->ShowWindow(FALSE);
+		m_peDetailPages[i]->AutoSize();
 	}
 	//解析PE结构
 	parsePe();
@@ -210,6 +212,45 @@ void CPeDialog::OnTvnSelchangedTreeHeaders(NMHDR *pNMHDR, LRESULT *pResult)
 		currentSel = SECTION_HEADER;
 	}
 	*pResult = 0;
+}
+
+void CPeDialog::OnCharacteristicsClick(NMHDR * pNotifyStruct, LRESULT * pResult)
+{
+	NM_GRIDVIEW* pItem = (NM_GRIDVIEW*)pNotifyStruct;
+	int row = pItem->iRow;
+	int column = pItem->iColumn;
+	if (row == 7 && column == 4) {
+		CString value = m_fileHeaderCtrl.GetItemText(7, 3);
+		value = _T("0x") + value;
+		int valInt = 0;
+		StrToIntEx(value, STIF_SUPPORT_HEX, &valInt);
+		//TO_DO 根据整数值计算文件特征
+		/* java解析辅助代码
+			IMAGE_FILE_RELOCS_STRIPPED           0x0001//Relocation info stripped from file.
+IMAGE_FILE_EXECUTABLE_IMAGE          0x0002//File is executable  (i.e. no unresolved external references).
+IMAGE_FILE_LINE_NUMS_STRIPPED        0x0004//Line nunbers stripped from file.
+IMAGE_FILE_LOCAL_SYMS_STRIPPED       0x0008//Local symbols stripped from file.
+IMAGE_FILE_AGGRESIVE_WS_TRIM         0x0010//Aggressively trim working set
+IMAGE_FILE_LARGE_ADDRESS_AWARE       0x0020//App can handle >2gb addresses
+IMAGE_FILE_BYTES_REVERSED_LO         0x0080//Bytes of machine word are reversed.
+IMAGE_FILE_32BIT_MACHINE             0x0100//32 bit word machine.
+IMAGE_FILE_DEBUG_STRIPPED            0x0200//Debugging info stripped from file in .DBG file
+IMAGE_FILE_REMOVABLE_RUN_FROM_SWAP   0x0400//If Image is on removable media, copy and run from the swap file.
+IMAGE_FILE_NET_RUN_FROM_SWAP         0x0800//If Image is on Net, copy and run from the swap file.
+IMAGE_FILE_SYSTEM                    0x1000//System File.
+IMAGE_FILE_DLL                       0x2000//File is a DLL.
+IMAGE_FILE_UP_SYSTEM_ONLY            0x4000//File should only be run on a UP machine
+IMAGE_FILE_BYTES_REVERSED_HI         0x8000//Bytes of machine word are reversed.
+BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(new File("pe_struct1.txt"))));
+String temp = null;
+while((temp = br.readLine()) != null){
+String info = temp.split("//")[1];
+String value = temp.split("[ ]+")[0];
+System.out.println(info + ";" + value);
+}
+br.close();
+		*/
+	}
 }
 
 void CPeDialog::parsePe()
@@ -349,8 +390,8 @@ void createfileHeaderLine(int row, CString name, int offset, CString &sizeStr, L
 		magicStr.Format(_T("%04X"), value);
 	}
 	makeItemToCtrl(dosHeaderCtrl, row, 3, magicStr);
+	CString meaningStr;
 	if (row == 1) {
-		CString meaningStr;
 		switch (value)
 		{
 		case IMAGE_FILE_MACHINE_UNKNOWN:
@@ -444,11 +485,14 @@ void createfileHeaderLine(int row, CString name, int offset, CString &sizeStr, L
 			meaningStr = _T("");
 			break;
 		}
-		makeItemToCtrl(dosHeaderCtrl, row, 4, meaningStr);
+	}
+	else if(row == 7){
+		meaningStr = _T("Click here");
 	}
 	else {
-		makeItemToCtrl(dosHeaderCtrl, row, 4, _T(""));
+		meaningStr = _T("");
 	}
+	makeItemToCtrl(dosHeaderCtrl, row, 4, meaningStr);
 }
 void CPeDialog::parseNtHeader(int ntOffset)
 {
@@ -512,9 +556,9 @@ void CPeDialog::parseNtHeader(int ntOffset)
 		m_fileHeaderCtrl.SetItemBkColour(1, 4, RGB(174, 197, 232));
 		m_fileHeaderCtrl.SetItemBkColour(7, 3, RGB(174, 197, 232));
 		m_fileHeaderCtrl.SetItemBkColour(7, 4, RGB(174, 197, 232));
-		createfileHeaderLine(1, _T(" Machine"), offsetTmp, sizeStrAry[sizeof(fileHeader.Machine) - 1], fileHeader.Machine, m_fileHeaderCtrl);
+		createfileHeaderLine(1, _T("Machine"), offsetTmp, sizeStrAry[sizeof(fileHeader.Machine) - 1], fileHeader.Machine, m_fileHeaderCtrl);
 		offsetTmp += sizeof(fileHeader.Machine);
-		createfileHeaderLine(2, _T(" NumberOfSections"), offsetTmp, sizeStrAry[sizeof(fileHeader.NumberOfSections) - 1], fileHeader.NumberOfSections, m_fileHeaderCtrl);
+		createfileHeaderLine(2, _T("NumberOfSections"), offsetTmp, sizeStrAry[sizeof(fileHeader.NumberOfSections) - 1], fileHeader.NumberOfSections, m_fileHeaderCtrl);
 		offsetTmp += sizeof(fileHeader.NumberOfSections);
 		createfileHeaderLine(3, _T("TimeDateStamp"), offsetTmp, sizeStrAry[sizeof(fileHeader.TimeDateStamp) - 1], fileHeader.TimeDateStamp, m_fileHeaderCtrl);
 		offsetTmp += sizeof(fileHeader.TimeDateStamp);
@@ -522,9 +566,9 @@ void CPeDialog::parseNtHeader(int ntOffset)
 		offsetTmp += sizeof(fileHeader.PointerToSymbolTable);
 		createfileHeaderLine(5, _T("NumberOfSymbols"), offsetTmp, sizeStrAry[sizeof(fileHeader.NumberOfSymbols) - 1], fileHeader.NumberOfSymbols, m_fileHeaderCtrl);
 		offsetTmp += sizeof(fileHeader.NumberOfSymbols);
-		createfileHeaderLine(6, _T(" SizeOfOptionalHeader"), offsetTmp, sizeStrAry[sizeof(fileHeader.SizeOfOptionalHeader) - 1], fileHeader.SizeOfOptionalHeader, m_fileHeaderCtrl);
+		createfileHeaderLine(6, _T("SizeOfOptionalHeader"), offsetTmp, sizeStrAry[sizeof(fileHeader.SizeOfOptionalHeader) - 1], fileHeader.SizeOfOptionalHeader, m_fileHeaderCtrl);
 		offsetTmp += sizeof(fileHeader.SizeOfOptionalHeader);
-		createfileHeaderLine(7, _T(" Characteristics"), offsetTmp, sizeStrAry[sizeof(fileHeader.Characteristics) - 1], fileHeader.Characteristics, m_fileHeaderCtrl);
+		createfileHeaderLine(7, _T("Characteristics"), offsetTmp, sizeStrAry[sizeof(fileHeader.Characteristics) - 1], fileHeader.Characteristics, m_fileHeaderCtrl);
 		offsetTmp += sizeof(fileHeader.Characteristics);
 		file.Close();
 		return;

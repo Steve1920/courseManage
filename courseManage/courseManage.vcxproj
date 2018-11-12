@@ -191,6 +191,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AboutBox.h" />
+    <ClInclude Include="Characteristics.h" />
     <ClInclude Include="courseManage.h" />
     <ClInclude Include="courseManageDlg.h" />
     <ClInclude Include="CourseManageMain.h" />
@@ -217,6 +218,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="AboutBox.cpp" />
+    <ClCompile Include="Characteristics.cpp" />
     <ClCompile Include="courseManage.cpp" />
     <ClCompile Include="courseManageDlg.cpp" />
     <ClCompile Include="CourseManageMain.cpp" />
