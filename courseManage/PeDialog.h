@@ -1,6 +1,7 @@
 #pragma once
 #include "afxcmn.h"
 #include "GridCtrl_src\GridCtrl.h"
+#include "Characteristics.h"
 // CPeDialog ¶Ô»°¿ò
 
 class CPeDialog : public CDialogEx
