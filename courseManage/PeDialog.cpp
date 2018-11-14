@@ -494,10 +494,10 @@ void CPeDialog::parseNtHeader(int ntOffset)
 	int offsetTmp = ntOffset;
 	if (result) {
 		CString sizeStrAry[4] = { _T("Byte"),_T("Word"),_T("") ,_T("Dword") };
-		file.Seek(ntOffset,CFile::begin);
+		file.Seek(ntOffset, CFile::begin);
 		DWORD signature;
 		IMAGE_FILE_HEADER fileHeader;
-		file.Read(&signature,sizeof(signature));
+		file.Read(&signature, sizeof(signature));
 		createDosHeaderLine(1, _T("Signature"), ntOffset, sizeStrAry[sizeof(signature) - 1], signature, m_ntHeadersCtrl);
 		offsetTmp += sizeof(signature);
 		//parse file header
@@ -546,6 +546,16 @@ void CPeDialog::parseNtHeader(int ntOffset)
 		offsetTmp += sizeof(fileHeader.SizeOfOptionalHeader);
 		createfileHeaderLine(7, _T("Characteristics"), offsetTmp, sizeStrAry[sizeof(fileHeader.Characteristics) - 1], fileHeader.Characteristics, m_fileHeaderCtrl);
 		offsetTmp += sizeof(fileHeader.Characteristics);
+		if (fileHeader.Machine == IMAGE_FILE_MACHINE_IA64
+			|| fileHeader.Machine == IMAGE_FILE_MACHINE_ALPHA64
+			|| fileHeader.Machine == IMAGE_FILE_MACHINE_AMD64) {
+			IMAGE_OPTIONAL_HEADER64 image64;
+			file.Read(&image64, sizeof(fileHeader.SizeOfOptionalHeader));
+		}
+		else {
+			IMAGE_OPTIONAL_HEADER32 image32;
+			file.Read(&image32, sizeof(fileHeader.SizeOfOptionalHeader));
+		}
 		file.Close();
 		return;
 	}
