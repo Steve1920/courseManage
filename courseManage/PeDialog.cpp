@@ -47,6 +47,7 @@ BEGIN_MESSAGE_MAP(CPeDialog, CDialogEx)
 //ON_NOTIFY(NM_CLICK, IDC_TREE_HEADERS, &CPeDialog::OnNMClickTreeHeaders)
 ON_NOTIFY(TVN_SELCHANGED, IDC_TREE_HEADERS, &CPeDialog::OnTvnSelchangedTreeHeaders)
 ON_NOTIFY(NM_CLICK, IDC_FILE_HEADER_CTRL, &CPeDialog::OnCharacteristicsClick)
+ON_NOTIFY(NM_CLICK, IDC_OPTIONAL_HEADER_CTRL, &CPeDialog::OnSubsystemClick)
 END_MESSAGE_MAP()
 
 
@@ -226,6 +227,20 @@ void CPeDialog::OnCharacteristicsClick(NMHDR * pNotifyStruct, LRESULT * pResult)
 		StrToIntEx(value, STIF_SUPPORT_HEX, &valInt);
 		CCharacteristics cDialog(valInt);
 		cDialog.DoModal();
+	}
+}
+
+void CPeDialog::OnSubsystemClick(NMHDR * pNotifyStruct, LRESULT * pResult)
+{
+	NM_GRIDVIEW* pItem = (NM_GRIDVIEW*)pNotifyStruct;
+	NMHDR hdr =  pItem->hdr;
+	int row = pItem->iRow;
+	int column = pItem->iColumn;
+	if (row == 23 && column == 4) {
+		CString value = m_fileHeaderCtrl.GetItemText(23, 3);
+		value = _T("0x") + value;
+		int valInt = 0;
+		StrToIntEx(value, STIF_SUPPORT_HEX, &valInt);
 	}
 }
 
@@ -470,6 +485,69 @@ void createfileHeaderLine(int row, CString name, int offset, CString &sizeStr, L
 	}
 	makeItemToCtrl(dosHeaderCtrl, row, 4, meaningStr);
 }
+//-1 打开文件失败 0 非pe文件 1 是合法PE
+int CPeDialog::validPeVerify()
+{
+	CFile file;
+	BOOL result = file.Open(m_exeFullPath, CFile::modeRead);
+	if (result) {
+		int peResult = 0;
+		IMAGE_DOS_HEADER dosHeader;
+		file.Read(&dosHeader,sizeof(dosHeader));
+		file.Seek(dosHeader.e_lfanew,CFile::begin);
+		int pesig = 0;
+		file.Read(&pesig, 4);
+		if (pesig == IMAGE_NT_SIGNATURE && dosHeader.e_magic == IMAGE_DOS_SIGNATURE) {
+			peResult = 1;
+		}
+		file.Close();
+		return peResult;
+	}
+	else {
+		MessageBox(_T("打开文件失败"), _T("消息框"), MB_OK);
+		return -1;
+	}
+}
+void createOptionalHeaderLine(int row, CString name, int offset, CString &sizeStr, LONG value, CGridCtrl &optionalCtrl) {
+	makeItemToCtrl(optionalCtrl, row, 0, name);
+	CString offsetStrMagic;
+	offsetStrMagic.Format(_T("%08X"), offset);
+	makeItemToCtrl(optionalCtrl, row, 1, offsetStrMagic);
+	makeItemToCtrl(optionalCtrl, row, 2, sizeStr);
+	CString valueStr;
+	if (row == 2 || row == 3) {
+		valueStr.Format(_T("%02X"), value);
+	}
+	else if (row == 1 || (row >= 13 && row <= 18)) {
+		valueStr.Format(_T("%04X"), value);
+	}
+	else {
+		valueStr.Format(_T("%08X"), value);
+	}
+	makeItemToCtrl(optionalCtrl, row, 3, valueStr);
+	if (row == 1) {
+		CString meaningStr;
+		if (value == IMAGE_NT_OPTIONAL_HDR32_MAGIC) {
+			meaningStr = _T("PE32");
+		}
+		else if (value == IMAGE_NT_OPTIONAL_HDR64_MAGIC) {
+			meaningStr = _T("PE64");
+		}
+		else if (value == IMAGE_ROM_OPTIONAL_HDR_MAGIC) {
+			meaningStr = _T("ROM");
+		}
+		else {
+			meaningStr = _T("Unknown value");
+		}
+		makeItemToCtrl(optionalCtrl, row, 4, meaningStr);
+	}
+	if (row == 7) {
+		makeItemToCtrl(optionalCtrl, row, 4, _T(".text"));
+	}
+	if (name == _T("Subsystem")) {
+
+	}
+}
 void CPeDialog::parseNtHeader(int ntOffset)
 {
 	m_ntHeadersCtrl.SetEditable(true);
@@ -546,15 +624,46 @@ void CPeDialog::parseNtHeader(int ntOffset)
 		offsetTmp += sizeof(fileHeader.SizeOfOptionalHeader);
 		createfileHeaderLine(7, _T("Characteristics"), offsetTmp, sizeStrAry[sizeof(fileHeader.Characteristics) - 1], fileHeader.Characteristics, m_fileHeaderCtrl);
 		offsetTmp += sizeof(fileHeader.Characteristics);
+		m_optionalHeaderCtrl.SetEditable(true);
+		m_optionalHeaderCtrl.SetTextBkColor(RGB(0xFF, 0xFF, 0xE0));//黄色背景
+		m_optionalHeaderCtrl.SetRowCount(31);
+		m_optionalHeaderCtrl.SetColumnCount(5);
+		m_optionalHeaderCtrl.SetFixedRowCount(1);
+		m_optionalHeaderCtrl.SetFixedColumnCount(3);
+		makeItemToCtrl(m_optionalHeaderCtrl, 0, 0, _T("Member"));
+		makeItemToCtrl(m_optionalHeaderCtrl, 0, 1, _T("Offset"));
+		makeItemToCtrl(m_optionalHeaderCtrl, 0, 2, _T("Size"));
+		makeItemToCtrl(m_optionalHeaderCtrl, 0, 3, _T("Value"));
+		makeItemToCtrl(m_optionalHeaderCtrl, 0, 4, _T("Meaning"));
+		for (int row = 0; row < m_optionalHeaderCtrl.GetRowCount(); row++) {
+			for (int col = 0; col < m_optionalHeaderCtrl.GetColumnCount(); col++)
+			{
+				m_optionalHeaderCtrl.SetRowHeight(row, 25); //设置各行高         
+				if (col == 0) {
+					m_optionalHeaderCtrl.SetColumnWidth(col, 200); //设置各列宽
+				}
+				else {
+					m_optionalHeaderCtrl.SetColumnWidth(col, 100); //设置各列宽
+				}
+			}
+		}
+		m_optionalHeaderCtrl.SetItemBkColour(1, 3, RGB(174, 197, 232));
+		m_optionalHeaderCtrl.SetItemBkColour(1, 4, RGB(174, 197, 232));
+		m_optionalHeaderCtrl.SetItemBkColour(23, 3, RGB(174, 197, 232));
+		m_optionalHeaderCtrl.SetItemBkColour(23, 4, RGB(174, 197, 232));
+		m_optionalHeaderCtrl.SetItemBkColour(24, 3, RGB(174, 197, 232));
+		m_optionalHeaderCtrl.SetItemBkColour(24, 4, RGB(174, 197, 232));
 		if (fileHeader.Machine == IMAGE_FILE_MACHINE_IA64
 			|| fileHeader.Machine == IMAGE_FILE_MACHINE_ALPHA64
 			|| fileHeader.Machine == IMAGE_FILE_MACHINE_AMD64) {
 			IMAGE_OPTIONAL_HEADER64 image64;
-			file.Read(&image64, sizeof(fileHeader.SizeOfOptionalHeader));
+			file.Read(&image64, fileHeader.SizeOfOptionalHeader);
+			parseOptionalHeader64(offsetTmp, image64);
 		}
 		else {
 			IMAGE_OPTIONAL_HEADER32 image32;
-			file.Read(&image32, sizeof(fileHeader.SizeOfOptionalHeader));
+			file.Read(&image32, fileHeader.SizeOfOptionalHeader);
+			parseOptionalHeader32(offsetTmp, image32);
 		}
 		file.Close();
 		return;
@@ -564,26 +673,72 @@ void CPeDialog::parseNtHeader(int ntOffset)
 		return;
 	}
 }
-//-1 打开文件失败 0 非pe文件 1 是合法PE
-int CPeDialog::validPeVerify()
+void CPeDialog::parseOptionalHeader32(int offset, IMAGE_OPTIONAL_HEADER32 & image32)
 {
-	CFile file;
-	BOOL result = file.Open(m_exeFullPath, CFile::modeRead);
-	if (result) {
-		int peResult = 0;
-		IMAGE_DOS_HEADER dosHeader;
-		file.Read(&dosHeader,sizeof(dosHeader));
-		file.Seek(dosHeader.e_lfanew,CFile::begin);
-		int pesig = 0;
-		file.Read(&pesig, 4);
-		if (pesig == IMAGE_NT_SIGNATURE && dosHeader.e_magic == IMAGE_DOS_SIGNATURE) {
-			peResult = 1;
-		}
-		file.Close();
-		return peResult;
-	}
-	else {
-		MessageBox(_T("打开文件失败"), _T("消息框"), MB_OK);
-		return -1;
-	}
+	CString sizeStrAry[4] = { _T("Byte"),_T("Word"),_T("") ,_T("Dword") };
+	createOptionalHeaderLine(1, _T("Magic"), offset, sizeStrAry[sizeof(image32.Magic) - 1], image32.Magic, m_optionalHeaderCtrl);
+	offset += sizeof(image32.Magic);
+	createOptionalHeaderLine(2, _T("MajorLinkerVersion"), offset, sizeStrAry[sizeof(image32.MajorLinkerVersion) - 1], image32.MajorLinkerVersion, m_optionalHeaderCtrl);
+	offset += sizeof(image32.MajorLinkerVersion);
+	createOptionalHeaderLine(3, _T("MinorLinkerVersion"), offset, sizeStrAry[sizeof(image32.MinorLinkerVersion) - 1], image32.MinorLinkerVersion, m_optionalHeaderCtrl);
+	offset += sizeof(image32.MinorLinkerVersion);
+	createOptionalHeaderLine(4, _T("SizeOfCode"), offset, sizeStrAry[sizeof(image32.SizeOfCode) - 1], image32.SizeOfCode, m_optionalHeaderCtrl);
+	offset += sizeof(image32.SizeOfCode);
+	createOptionalHeaderLine(5, _T("SizeOfInitializedData"), offset, sizeStrAry[sizeof(image32.SizeOfInitializedData) - 1], image32.SizeOfInitializedData, m_optionalHeaderCtrl);
+	offset += sizeof(image32.SizeOfInitializedData);
+	createOptionalHeaderLine(6, _T("SizeOfUninitializedData"), offset, sizeStrAry[sizeof(image32.SizeOfUninitializedData) - 1], image32.SizeOfUninitializedData, m_optionalHeaderCtrl);
+	offset += sizeof(image32.SizeOfUninitializedData);
+	createOptionalHeaderLine(7, _T("AddressOfEntryPoint"), offset, sizeStrAry[sizeof(image32.AddressOfEntryPoint) - 1], image32.AddressOfEntryPoint, m_optionalHeaderCtrl);
+	offset += sizeof(image32.AddressOfEntryPoint);
+	createOptionalHeaderLine(8, _T("BaseOfCode"), offset, sizeStrAry[sizeof(image32.BaseOfCode) - 1], image32.BaseOfCode, m_optionalHeaderCtrl);
+	offset += sizeof(image32.BaseOfCode);
+	createOptionalHeaderLine(9, _T("BaseOfData"), offset, sizeStrAry[sizeof(image32.BaseOfData) - 1], image32.BaseOfData, m_optionalHeaderCtrl);
+	offset += sizeof(image32.BaseOfData);
+	createOptionalHeaderLine(10, _T("ImageBase"), offset, sizeStrAry[sizeof(image32.ImageBase) - 1], image32.ImageBase, m_optionalHeaderCtrl);
+	offset += sizeof(image32.ImageBase);
+	createOptionalHeaderLine(11, _T("SectionAlignment"), offset, sizeStrAry[sizeof(image32.SectionAlignment) - 1], image32.SectionAlignment, m_optionalHeaderCtrl);
+	offset += sizeof(image32.SectionAlignment);
+	createOptionalHeaderLine(12, _T("FileAlignment"), offset, sizeStrAry[sizeof(image32.FileAlignment) - 1], image32.FileAlignment, m_optionalHeaderCtrl);
+	offset += sizeof(image32.FileAlignment);
+	createOptionalHeaderLine(13, _T("MajorOperatingSystemVersion"), offset, sizeStrAry[sizeof(image32.MajorOperatingSystemVersion) - 1], image32.MajorOperatingSystemVersion, m_optionalHeaderCtrl);
+	offset += sizeof(image32.MajorOperatingSystemVersion);
+	createOptionalHeaderLine(14, _T("MinorOperatingSystemVersion"), offset, sizeStrAry[sizeof(image32.MinorOperatingSystemVersion) - 1], image32.MinorOperatingSystemVersion, m_optionalHeaderCtrl);
+	offset += sizeof(image32.MinorOperatingSystemVersion);
+	createOptionalHeaderLine(15, _T("MajorImageVersion"), offset, sizeStrAry[sizeof(image32.MajorImageVersion) - 1], image32.MajorImageVersion, m_optionalHeaderCtrl);
+	offset += sizeof(image32.MajorImageVersion);
+	createOptionalHeaderLine(16, _T("MinorImageVersion"), offset, sizeStrAry[sizeof(image32.MinorImageVersion) - 1], image32.MinorImageVersion, m_optionalHeaderCtrl);
+	offset += sizeof(image32.MinorImageVersion);
+	createOptionalHeaderLine(17, _T("MajorSubsystemVersion"), offset, sizeStrAry[sizeof(image32.MajorSubsystemVersion) - 1], image32.MajorSubsystemVersion, m_optionalHeaderCtrl);
+	offset += sizeof(image32.MajorSubsystemVersion);
+	createOptionalHeaderLine(18, _T("MinorSubsystemVersion"), offset, sizeStrAry[sizeof(image32.MinorSubsystemVersion) - 1], image32.MinorSubsystemVersion, m_optionalHeaderCtrl);
+	offset += sizeof(image32.MinorSubsystemVersion);
+	createOptionalHeaderLine(19, _T("Win32VersionValue"), offset, sizeStrAry[sizeof(image32.Win32VersionValue) - 1], image32.Win32VersionValue, m_optionalHeaderCtrl);
+	offset += sizeof(image32.Win32VersionValue);
+	createOptionalHeaderLine(20, _T("SizeOfImage"), offset, sizeStrAry[sizeof(image32.SizeOfImage) - 1], image32.SizeOfImage, m_optionalHeaderCtrl);
+	offset += sizeof(image32.SizeOfImage);
+	createOptionalHeaderLine(21, _T("SizeOfHeaders"), offset, sizeStrAry[sizeof(image32.SizeOfHeaders) - 1], image32.SizeOfHeaders, m_optionalHeaderCtrl);
+	offset += sizeof(image32.SizeOfHeaders);
+	createOptionalHeaderLine(22, _T("CheckSum"), offset, sizeStrAry[sizeof(image32.CheckSum) - 1], image32.CheckSum, m_optionalHeaderCtrl);
+	offset += sizeof(image32.CheckSum);
+	createOptionalHeaderLine(23, _T("Subsystem"), offset, sizeStrAry[sizeof(image32.Subsystem) - 1], image32.Subsystem, m_optionalHeaderCtrl);
+	offset += sizeof(image32.Subsystem);
+	createOptionalHeaderLine(24, _T("DllCharacteristics"), offset, sizeStrAry[sizeof(image32.DllCharacteristics) - 1], image32.DllCharacteristics, m_optionalHeaderCtrl);
+	offset += sizeof(image32.DllCharacteristics);
+	createOptionalHeaderLine(25, _T("SizeOfStackReserve"), offset, sizeStrAry[sizeof(image32.SizeOfStackReserve) - 1], image32.SizeOfStackReserve, m_optionalHeaderCtrl);
+	offset += sizeof(image32.SizeOfStackReserve);
+	createOptionalHeaderLine(26, _T("SizeOfStackCommit"), offset, sizeStrAry[sizeof(image32.SizeOfStackCommit) - 1], image32.SizeOfStackCommit, m_optionalHeaderCtrl);
+	offset += sizeof(image32.SizeOfStackCommit);
+	createOptionalHeaderLine(27, _T("SizeOfHeapReserve"), offset, sizeStrAry[sizeof(image32.SizeOfHeapReserve) - 1], image32.SizeOfHeapReserve, m_optionalHeaderCtrl);
+	offset += sizeof(image32.SizeOfHeapReserve);
+	createOptionalHeaderLine(28, _T("SizeOfHeapCommit"), offset, sizeStrAry[sizeof(image32.SizeOfHeapCommit) - 1], image32.SizeOfHeapCommit, m_optionalHeaderCtrl);
+	offset += sizeof(image32.SizeOfHeapCommit);
+	createOptionalHeaderLine(29, _T("LoaderFlags"), offset, sizeStrAry[sizeof(image32.LoaderFlags) - 1], image32.LoaderFlags, m_optionalHeaderCtrl);
+	offset += sizeof(image32.LoaderFlags);
+	createOptionalHeaderLine(30, _T("NumberOfRvaAndSizes"), offset, sizeStrAry[sizeof(image32.NumberOfRvaAndSizes) - 1], image32.NumberOfRvaAndSizes, m_optionalHeaderCtrl);
+	offset += sizeof(image32.NumberOfRvaAndSizes);
+}
+
+void CPeDialog::parseOptionalHeader64(int offset, IMAGE_OPTIONAL_HEADER64 & image64)
+{
+
 }

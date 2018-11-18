@@ -49,6 +49,7 @@ public:
 	HTREEITEM m_sectionHeaders;
 	afx_msg void OnTvnSelchangedTreeHeaders(NMHDR *pNMHDR, LRESULT *pResult);
 	afx_msg void OnCharacteristicsClick(NMHDR *pNotifyStruct, LRESULT* pResult);
+	afx_msg void OnSubsystemClick(NMHDR *pNotifyStruct, LRESULT* pResult);
 	CGridCtrl m_dosHeaderCtrl;
 	CGridCtrl m_ntHeadersCtrl;
 	CGridCtrl m_fileHeaderCtrl;
@@ -59,5 +60,7 @@ public:
 	int parseDosHeader();
 	void parseNtHeader(int ntOffset);
 	int validPeVerify();
+	void parseOptionalHeader32(int offset, IMAGE_OPTIONAL_HEADER32 &image32);
+	void parseOptionalHeader64(int offset, IMAGE_OPTIONAL_HEADER64 &image64);
 	int currentSel;
 };

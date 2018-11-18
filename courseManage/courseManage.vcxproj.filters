@@ -99,6 +99,9 @@
     <ClInclude Include="Characteristics.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="ShowSelectDlg.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="courseManage.cpp">
@@ -159,6 +162,9 @@
       <Filter>源文件\include</Filter>
     </ClCompile>
     <ClCompile Include="Characteristics.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="ShowSelectDlg.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
