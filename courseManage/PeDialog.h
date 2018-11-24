@@ -2,6 +2,7 @@
 #include "afxcmn.h"
 #include "GridCtrl_src\GridCtrl.h"
 #include "Characteristics.h"
+#include "ShowSelectDlg.h"
 // CPeDialog ¶Ô»°¿ò
 
 class CPeDialog : public CDialogEx

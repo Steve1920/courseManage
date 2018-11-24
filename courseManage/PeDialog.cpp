@@ -241,6 +241,14 @@ void CPeDialog::OnSubsystemClick(NMHDR * pNotifyStruct, LRESULT * pResult)
 		value = _T("0x") + value;
 		int valInt = 0;
 		StrToIntEx(value, STIF_SUPPORT_HEX, &valInt);
+		CShowSelectDlg subSysDlg;
+		subSysDlg.m_select.InsertString(0,_T("asadasdas"));
+		subSysDlg.m_select.InsertString(1, _T("asadasdas"));
+		subSysDlg.m_select.InsertString(2, _T("asadasdas"));
+		subSysDlg.m_select.SetCurSel(1);
+		subSysDlg.DoModal();
+		/*subSysDlg.m_select.InsertString( _T("asadasdas"));
+		subSysDlg.m_select.InsertString(2, _T("asadasdas1"));*/
 	}
 }
 
@@ -644,6 +652,9 @@ void CPeDialog::parseNtHeader(int ntOffset)
 				}
 				else {
 					m_optionalHeaderCtrl.SetColumnWidth(col, 100); //ÉèÖÃ¸÷ÁÐ¿í
+				}
+				if (col == m_optionalHeaderCtrl.GetColumnCount() - 1) {
+					m_optionalHeaderCtrl.SetItemState(row, col, m_optionalHeaderCtrl.GetItemState(row, col) | GVIS_READONLY);
 				}
 			}
 		}
