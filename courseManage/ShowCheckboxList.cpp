@@ -60,7 +60,7 @@ BOOL CShowCheckboxList::OnInitDialog()
 	{
 		count = m_checkboxListCtrl.GetItemCount();
 		m_checkboxListCtrl.InsertItem(count, *iterStr);
-		iterSel = find(m_selVec.begin(), m_selVec.end(), count);
+		iterSel = find(m_selVec.begin(), m_selVec.end(), count + 1);
 		if (iterSel != m_selVec.end()) {
 			m_checkboxListCtrl.SetCheck(count, true);
 		}
