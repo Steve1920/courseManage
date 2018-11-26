@@ -17,11 +17,12 @@ CShowSelectDlg::CShowSelectDlg(CWnd* pParent /*=NULL*/)
 
 }
 
-CShowSelectDlg::CShowSelectDlg(LPVOID pStrArry, size_t size, int selIndex, CWnd * pParent) : CDialogEx(IDD_SHOWSELECT_DLG, pParent)
+CShowSelectDlg::CShowSelectDlg(LPVOID pStrArry, size_t size, int selIndex,CString txtName, CWnd * pParent) : CDialogEx(IDD_SHOWSELECT_DLG, pParent)
 {
 	m_pStrArry = pStrArry;
 	m_size = size;
 	m_selIndex = selIndex;
+	m_textName = txtName;
 }
 
 CShowSelectDlg::~CShowSelectDlg()
@@ -52,6 +53,7 @@ BOOL CShowSelectDlg::OnInitDialog()
 		m_select.InsertString(i, (*ary)[i]);
 	}
 	m_select.SetCurSel(m_selIndex);
+	SetWindowText(m_textName);
 	UpdateData(FALSE);
 	return TRUE;  // return TRUE unless you set the focus to a control
 				  // 异常: OCX 属性页应返回 FALSE
@@ -60,9 +62,5 @@ BOOL CShowSelectDlg::OnInitDialog()
 
 BOOL CShowSelectDlg::DestroyWindow()
 {
-	// TODO: 在此添加专用代码和/或调用基类
-	if (m_pStrArry) {
-		delete m_pStrArry;
-	}
 	return CDialogEx::DestroyWindow();
 }

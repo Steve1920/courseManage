@@ -10,7 +10,7 @@ class CShowSelectDlg : public CDialogEx
 
 public:
 	CShowSelectDlg(CWnd* pParent = NULL);   // 标准构造函数
-	CShowSelectDlg(LPVOID pStrArry,size_t size,int selIndex,CWnd* pParent = NULL);   // 标准构造函数
+	CShowSelectDlg(LPVOID pStrArry,size_t size,int selIndex,CString textName,CWnd* pParent = NULL);   // 标准构造函数
 	virtual ~CShowSelectDlg();
 
 // 对话框数据
@@ -27,6 +27,7 @@ public:
 	LPVOID m_pStrArry; 
 	size_t m_size;
 	int m_selIndex;
+	CString m_textName;
 	virtual BOOL OnInitDialog();
 	virtual BOOL DestroyWindow();
 };

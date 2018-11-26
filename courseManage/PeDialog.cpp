@@ -269,8 +269,7 @@ void CPeDialog::OnSubsystemClick(NMHDR * pNotifyStruct, LRESULT * pResult)
 		ary[11] = str_11;
 		CString str_12 = _T("Windows Boot Application");
 		ary[12] = str_12;
-		CShowSelectDlg subSysDlg(ary,13, selIndex);
-		subSysDlg.SetWindowText(_T("Subsystem"));
+		CShowSelectDlg subSysDlg(ary,13, selIndex, _T("Subsystem"));
 		subSysDlg.DoModal();
 		/*subSysDlg.m_select.InsertString( _T("asadasdas"));
 		subSysDlg.m_select.InsertString(2, _T("asadasdas1"));*/
