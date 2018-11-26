@@ -3,6 +3,8 @@
 #include "GridCtrl_src\GridCtrl.h"
 #include "Characteristics.h"
 #include "ShowSelectDlg.h"
+#include "ShowCheckboxList.h"
+#include <vector>
 // CPeDialog ¶Ô»°¿ò
 
 class CPeDialog : public CDialogEx

@@ -229,7 +229,8 @@ void CPeDialog::OnCharacteristicsClick(NMHDR * pNotifyStruct, LRESULT * pResult)
 		cDialog.DoModal();
 	}
 }
-
+using namespace std;
+using std::vector;
 void CPeDialog::OnSubsystemClick(NMHDR * pNotifyStruct, LRESULT * pResult)
 {
 	NM_GRIDVIEW* pItem = (NM_GRIDVIEW*)pNotifyStruct;
@@ -237,10 +238,6 @@ void CPeDialog::OnSubsystemClick(NMHDR * pNotifyStruct, LRESULT * pResult)
 	int row = pItem->iRow;
 	int column = pItem->iColumn;
 	if (row == 23 && column == 4) {
-		CString value = m_fileHeaderCtrl.GetItemText(23, 3);
-		value = _T("0x") + value;
-		int valInt = 0;
-		StrToIntEx(value, STIF_SUPPORT_HEX, &valInt);
 		int selIndex = 0;
 		CString *ary = new CString[13];
 		CString str_0 = _T("Unknown subsystem");
@@ -269,10 +266,99 @@ void CPeDialog::OnSubsystemClick(NMHDR * pNotifyStruct, LRESULT * pResult)
 		ary[11] = str_11;
 		CString str_12 = _T("Windows Boot Application");
 		ary[12] = str_12;
+		CString value = m_optionalHeaderCtrl.GetItemText(23, 3);
+		value = _T("0x") + value;
+		int valInt = 0;
+		StrToIntEx(value, STIF_SUPPORT_HEX, &valInt);
+		switch (valInt)
+		{
+		case IMAGE_SUBSYSTEM_UNKNOWN:
+			selIndex = 0;
+			break;
+		case IMAGE_SUBSYSTEM_NATIVE:
+			selIndex = 1;
+			break;
+		case IMAGE_SUBSYSTEM_WINDOWS_GUI:
+			selIndex = 2;
+			break;
+		case IMAGE_SUBSYSTEM_WINDOWS_CUI:
+			selIndex = 3;
+			break;
+		case IMAGE_SUBSYSTEM_OS2_CUI:
+			selIndex = 4;
+			break;
+		case IMAGE_SUBSYSTEM_POSIX_CUI:
+			selIndex = 5;
+			break;
+		case IMAGE_SUBSYSTEM_WINDOWS_CE_GUI:
+			selIndex = 6;
+			break;
+		case IMAGE_SUBSYSTEM_EFI_APPLICATION:
+			selIndex = 7;
+			break;
+		case IMAGE_SUBSYSTEM_EFI_BOOT_SERVICE_DRIVER:
+			selIndex = 8;
+			break;
+		case IMAGE_SUBSYSTEM_EFI_RUNTIME_DRIVER:
+			selIndex = 9;
+			break;
+		case IMAGE_SUBSYSTEM_EFI_ROM:
+			selIndex = 10;
+			break;
+		case IMAGE_SUBSYSTEM_XBOX:
+			selIndex = 11;
+			break;
+		case IMAGE_SUBSYSTEM_WINDOWS_BOOT_APPLICATION:
+			selIndex = 12;
+			break;
+		default:
+			selIndex = 0;
+			break;
+		}
 		CShowSelectDlg subSysDlg(ary,13, selIndex, _T("Subsystem"));
 		subSysDlg.DoModal();
-		/*subSysDlg.m_select.InsertString( _T("asadasdas"));
-		subSysDlg.m_select.InsertString(2, _T("asadasdas1"));*/
+	}
+	if (row == 24 && column == 4) {
+		CString value = m_optionalHeaderCtrl.GetItemText(24, 3);
+		value = _T("0x") + value;
+		int valInt = 0;
+		StrToIntEx(value, STIF_SUPPORT_HEX, &valInt);
+		vector<CString> strAry;
+		vector<int> selVec;
+		strAry.push_back(_T("Dll can move"));
+		strAry.push_back(_T("Code integrity image"));
+		strAry.push_back(_T("Image is NX compatible"));
+		strAry.push_back(_T("Image understands isolation and doesn't want it"));
+		strAry.push_back(_T("Image does not use SEH"));
+		strAry.push_back(_T("Do not bind the image"));
+		strAry.push_back(_T("A WDM driver"));
+		strAry.push_back(_T("The image is terminal server aware"));
+		if ((valInt & IMAGE_DLLCHARACTERISTICS_DYNAMIC_BASE) == IMAGE_DLLCHARACTERISTICS_DYNAMIC_BASE) {
+			selVec.push_back(1);
+		}
+		if ((valInt & IMAGE_DLLCHARACTERISTICS_FORCE_INTEGRITY) == IMAGE_DLLCHARACTERISTICS_FORCE_INTEGRITY) {
+			selVec.push_back(2);
+		}
+		if ((valInt & IMAGE_DLLCHARACTERISTICS_NX_COMPAT) == IMAGE_DLLCHARACTERISTICS_NX_COMPAT) {
+			selVec.push_back(3);
+		}
+		if ((valInt & IMAGE_DLLCHARACTERISTICS_NO_ISOLATION) == IMAGE_DLLCHARACTERISTICS_NO_ISOLATION) {
+			selVec.push_back(4);
+		}
+		if ((valInt & IMAGE_DLLCHARACTERISTICS_NO_SEH) == IMAGE_DLLCHARACTERISTICS_NO_SEH) {
+			selVec.push_back(5);
+		}
+		if ((valInt & IMAGE_DLLCHARACTERISTICS_NO_BIND) == IMAGE_DLLCHARACTERISTICS_NO_BIND) {
+			selVec.push_back(6);
+		}
+		if ((valInt & IMAGE_DLLCHARACTERISTICS_WDM_DRIVER) == IMAGE_DLLCHARACTERISTICS_WDM_DRIVER) {
+			selVec.push_back(7);
+		}
+		if ((valInt & IMAGE_DLLCHARACTERISTICS_TERMINAL_SERVER_AWARE) == IMAGE_DLLCHARACTERISTICS_TERMINAL_SERVER_AWARE) {
+			selVec.push_back(8);
+		}
+		CShowCheckboxList dllC(strAry, selVec,_T("DllCharacteristics"));
+		dllC.DoModal();
 	}
 }
 
@@ -577,7 +663,56 @@ void createOptionalHeaderLine(int row, CString name, int offset, CString &sizeSt
 		makeItemToCtrl(optionalCtrl, row, 4, _T(".text"));
 	}
 	if (name == _T("Subsystem")) {
-
+		CString meaningStr;
+		switch (value)
+		{
+		case IMAGE_SUBSYSTEM_UNKNOWN:
+			meaningStr = _T("Unknown subsystem");
+			break;
+		case IMAGE_SUBSYSTEM_NATIVE:
+			meaningStr = _T("Native");
+			break;
+		case IMAGE_SUBSYSTEM_WINDOWS_GUI:
+			meaningStr = _T("Windows GUI");
+			break;
+		case IMAGE_SUBSYSTEM_WINDOWS_CUI:
+			meaningStr = _T("Windows CUI");
+			break;
+		case IMAGE_SUBSYSTEM_OS2_CUI:
+			meaningStr = _T("OS/2 CUI subsystem");
+			break;
+		case IMAGE_SUBSYSTEM_POSIX_CUI:
+			meaningStr = _T("POSIX CUI subsystem");
+			break;
+		case IMAGE_SUBSYSTEM_WINDOWS_CE_GUI:
+			meaningStr = _T("Windows CE system");
+			break;
+		case IMAGE_SUBSYSTEM_EFI_APPLICATION:
+			meaningStr = _T("EFI Application");
+			break;
+		case IMAGE_SUBSYSTEM_EFI_BOOT_SERVICE_DRIVER:
+			meaningStr = _T("EFI Boot Driver");
+			break;
+		case IMAGE_SUBSYSTEM_EFI_RUNTIME_DRIVER:
+			meaningStr = _T("EFI Runtime Driver");
+			break;
+		case IMAGE_SUBSYSTEM_EFI_ROM:
+			meaningStr = _T("EFI ROM");
+			break;
+		case IMAGE_SUBSYSTEM_XBOX:
+			meaningStr = _T("XBox");
+			break;
+		case IMAGE_SUBSYSTEM_WINDOWS_BOOT_APPLICATION:
+			meaningStr = _T("Windows Boot Application");
+			break;
+		default:
+			meaningStr = _T("Unknown subsystem");
+			break;
+		}
+		makeItemToCtrl(optionalCtrl, row, 4, meaningStr);
+	}
+	if (name == _T("DllCharacteristics")) {
+		makeItemToCtrl(optionalCtrl, row, 4, _T("Click here"));
 	}
 }
 void CPeDialog::parseNtHeader(int ntOffset)
