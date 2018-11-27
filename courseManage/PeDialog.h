@@ -61,7 +61,7 @@ public:
 	CGridCtrl m_sectionHeadersCtrl;
 	void parsePe();
 	int parseDosHeader();
-	void parseNtHeader(int ntOffset);
+	void parseNtHeader(int &ntOffset, int &sectionSize);
 	int validPeVerify();
 	void parseOptionalHeader32(int offset, IMAGE_OPTIONAL_HEADER32 &image32);
 	void parseOptionalHeader64(int offset, IMAGE_OPTIONAL_HEADER64 &image64);

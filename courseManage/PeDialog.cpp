@@ -715,7 +715,7 @@ void createOptionalHeaderLine(int row, CString name, int offset, CString &sizeSt
 		makeItemToCtrl(optionalCtrl, row, 4, _T("Click here"));
 	}
 }
-void CPeDialog::parseNtHeader(int ntOffset)
+void CPeDialog::parseNtHeader(int &ntOffset,int &sectionSize)
 {
 	m_ntHeadersCtrl.SetEditable(true);
 	m_ntHeadersCtrl.SetTextBkColor(RGB(0xFF, 0xFF, 0xE0));//»ÆÉ«±³¾°
@@ -747,6 +747,7 @@ void CPeDialog::parseNtHeader(int ntOffset)
 		offsetTmp += sizeof(signature);
 		//parse file header
 		file.Read(&fileHeader, sizeof(fileHeader));
+		sectionSize = fileHeader.NumberOfSections;
 		m_fileHeaderCtrl.SetEditable(true);
 		m_fileHeaderCtrl.SetTextBkColor(RGB(0xFF, 0xFF, 0xE0));//»ÆÉ«±³¾°
 		m_fileHeaderCtrl.SetRowCount(8);
@@ -829,12 +830,15 @@ void CPeDialog::parseNtHeader(int ntOffset)
 			IMAGE_OPTIONAL_HEADER64 image64;
 			file.Read(&image64, fileHeader.SizeOfOptionalHeader);
 			parseOptionalHeader64(offsetTmp, image64);
+			offsetTmp += sizeof(image64);
 		}
 		else {
 			IMAGE_OPTIONAL_HEADER32 image32;
 			file.Read(&image32, fileHeader.SizeOfOptionalHeader);
 			parseOptionalHeader32(offsetTmp, image32);
+			offsetTmp += sizeof(image32);
 		}
+		ntOffset = offsetTmp;
 		file.Close();
 		return;
 	}
@@ -906,9 +910,68 @@ void CPeDialog::parseOptionalHeader32(int offset, IMAGE_OPTIONAL_HEADER32 & imag
 	offset += sizeof(image32.LoaderFlags);
 	createOptionalHeaderLine(30, _T("NumberOfRvaAndSizes"), offset, sizeStrAry[sizeof(image32.NumberOfRvaAndSizes) - 1], image32.NumberOfRvaAndSizes, m_optionalHeaderCtrl);
 	offset += sizeof(image32.NumberOfRvaAndSizes);
+	image32.DataDirectory;
 }
 
 void CPeDialog::parseOptionalHeader64(int offset, IMAGE_OPTIONAL_HEADER64 & image64)
 {
-
+	CString sizeStrAry[8] = { _T("Byte"),_T("Word"),_T("") ,_T("Dword"),_T(""),_T(""),_T(""),_T("DWORD64") };
+	createOptionalHeaderLine(1, _T("Magic"), offset, sizeStrAry[sizeof(image64.Magic) - 1], image64.Magic, m_optionalHeaderCtrl);
+	offset += sizeof(image64.Magic);
+	createOptionalHeaderLine(2, _T("MajorLinkerVersion"), offset, sizeStrAry[sizeof(image64.MajorLinkerVersion) - 1], image64.MajorLinkerVersion, m_optionalHeaderCtrl);
+	offset += sizeof(image64.MajorLinkerVersion);
+	createOptionalHeaderLine(3, _T("MinorLinkerVersion"), offset, sizeStrAry[sizeof(image64.MinorLinkerVersion) - 1], image64.MinorLinkerVersion, m_optionalHeaderCtrl);
+	offset += sizeof(image64.MinorLinkerVersion);
+	createOptionalHeaderLine(4, _T("SizeOfCode"), offset, sizeStrAry[sizeof(image64.SizeOfCode) - 1], image64.SizeOfCode, m_optionalHeaderCtrl);
+	offset += sizeof(image64.SizeOfCode);
+	createOptionalHeaderLine(5, _T("SizeOfInitializedData"), offset, sizeStrAry[sizeof(image64.SizeOfInitializedData) - 1], image64.SizeOfInitializedData, m_optionalHeaderCtrl);
+	offset += sizeof(image64.SizeOfInitializedData);
+	createOptionalHeaderLine(6, _T("SizeOfUninitializedData"), offset, sizeStrAry[sizeof(image64.SizeOfUninitializedData) - 1], image64.SizeOfUninitializedData, m_optionalHeaderCtrl);
+	offset += sizeof(image64.SizeOfUninitializedData);
+	createOptionalHeaderLine(7, _T("AddressOfEntryPoint"), offset, sizeStrAry[sizeof(image64.AddressOfEntryPoint) - 1], image64.AddressOfEntryPoint, m_optionalHeaderCtrl);
+	offset += sizeof(image64.AddressOfEntryPoint);
+	createOptionalHeaderLine(8, _T("BaseOfCode"), offset, sizeStrAry[sizeof(image64.BaseOfCode) - 1], image64.BaseOfCode, m_optionalHeaderCtrl);
+	offset += sizeof(image64.BaseOfCode);
+	createOptionalHeaderLine(9, _T("ImageBase"), offset, sizeStrAry[sizeof(image64.ImageBase) - 1], image64.ImageBase, m_optionalHeaderCtrl);
+	offset += sizeof(image64.ImageBase);
+	createOptionalHeaderLine(10, _T("SectionAlignment"), offset, sizeStrAry[sizeof(image64.SectionAlignment) - 1], image64.SectionAlignment, m_optionalHeaderCtrl);
+	offset += sizeof(image64.SectionAlignment);
+	createOptionalHeaderLine(11, _T("FileAlignment"), offset, sizeStrAry[sizeof(image64.FileAlignment) - 1], image64.FileAlignment, m_optionalHeaderCtrl);
+	offset += sizeof(image64.FileAlignment);
+	createOptionalHeaderLine(12, _T("MajorOperatingSystemVersion"), offset, sizeStrAry[sizeof(image64.MajorOperatingSystemVersion) - 1], image64.MajorOperatingSystemVersion, m_optionalHeaderCtrl);
+	offset += sizeof(image64.MajorOperatingSystemVersion);
+	createOptionalHeaderLine(13, _T("MinorOperatingSystemVersion"), offset, sizeStrAry[sizeof(image64.MinorOperatingSystemVersion) - 1], image64.MinorOperatingSystemVersion, m_optionalHeaderCtrl);
+	offset += sizeof(image64.MinorOperatingSystemVersion);
+	createOptionalHeaderLine(14, _T("MajorImageVersion"), offset, sizeStrAry[sizeof(image64.MajorImageVersion) - 1], image64.MajorImageVersion, m_optionalHeaderCtrl);
+	offset += sizeof(image64.MajorImageVersion);
+	createOptionalHeaderLine(15, _T("MinorImageVersion"), offset, sizeStrAry[sizeof(image64.MinorImageVersion) - 1], image64.MinorImageVersion, m_optionalHeaderCtrl);
+	offset += sizeof(image64.MinorImageVersion);
+	createOptionalHeaderLine(16, _T("MajorSubsystemVersion"), offset, sizeStrAry[sizeof(image64.MajorSubsystemVersion) - 1], image64.MajorSubsystemVersion, m_optionalHeaderCtrl);
+	offset += sizeof(image64.MajorSubsystemVersion);
+	createOptionalHeaderLine(17, _T("MinorSubsystemVersion"), offset, sizeStrAry[sizeof(image64.MinorSubsystemVersion) - 1], image64.MinorSubsystemVersion, m_optionalHeaderCtrl);
+	offset += sizeof(image64.MinorSubsystemVersion);
+	createOptionalHeaderLine(18, _T("Win32VersionValue"), offset, sizeStrAry[sizeof(image64.Win32VersionValue) - 1], image64.Win32VersionValue, m_optionalHeaderCtrl);
+	offset += sizeof(image64.Win32VersionValue);
+	createOptionalHeaderLine(19, _T("SizeOfImage"), offset, sizeStrAry[sizeof(image64.SizeOfImage) - 1], image64.SizeOfImage, m_optionalHeaderCtrl);
+	offset += sizeof(image64.SizeOfImage);
+	createOptionalHeaderLine(20, _T("SizeOfHeaders"), offset, sizeStrAry[sizeof(image64.SizeOfHeaders) - 1], image64.SizeOfHeaders, m_optionalHeaderCtrl);
+	offset += sizeof(image64.SizeOfHeaders);
+	createOptionalHeaderLine(21, _T("CheckSum"), offset, sizeStrAry[sizeof(image64.CheckSum) - 1], image64.CheckSum, m_optionalHeaderCtrl);
+	offset += sizeof(image64.CheckSum);
+	createOptionalHeaderLine(22, _T("Subsystem"), offset, sizeStrAry[sizeof(image64.Subsystem) - 1], image64.Subsystem, m_optionalHeaderCtrl);
+	offset += sizeof(image64.Subsystem);
+	createOptionalHeaderLine(23, _T("DllCharacteristics"), offset, sizeStrAry[sizeof(image64.DllCharacteristics) - 1], image64.DllCharacteristics, m_optionalHeaderCtrl);
+	offset += sizeof(image64.DllCharacteristics);
+	createOptionalHeaderLine(24, _T("SizeOfStackReserve"), offset, sizeStrAry[sizeof(image64.SizeOfStackReserve) - 1], image64.SizeOfStackReserve, m_optionalHeaderCtrl);
+	offset += sizeof(image64.SizeOfStackReserve);
+	createOptionalHeaderLine(25, _T("SizeOfStackCommit"), offset, sizeStrAry[sizeof(image64.SizeOfStackCommit) - 1], image64.SizeOfStackCommit, m_optionalHeaderCtrl);
+	offset += sizeof(image64.SizeOfStackCommit);
+	createOptionalHeaderLine(26, _T("SizeOfHeapReserve"), offset, sizeStrAry[sizeof(image64.SizeOfHeapReserve) - 1], image64.SizeOfHeapReserve, m_optionalHeaderCtrl);
+	offset += sizeof(image64.SizeOfHeapReserve);
+	createOptionalHeaderLine(27, _T("SizeOfHeapCommit"), offset, sizeStrAry[sizeof(image64.SizeOfHeapCommit) - 1], image64.SizeOfHeapCommit, m_optionalHeaderCtrl);
+	offset += sizeof(image64.SizeOfHeapCommit);
+	createOptionalHeaderLine(28, _T("LoaderFlags"), offset, sizeStrAry[sizeof(image64.LoaderFlags) - 1], image64.LoaderFlags, m_optionalHeaderCtrl);
+	offset += sizeof(image64.LoaderFlags);
+	createOptionalHeaderLine(29, _T("NumberOfRvaAndSizes"), offset, sizeStrAry[sizeof(image64.NumberOfRvaAndSizes) - 1], image64.NumberOfRvaAndSizes, m_optionalHeaderCtrl);
+	offset += sizeof(image64.NumberOfRvaAndSizes);
 }
