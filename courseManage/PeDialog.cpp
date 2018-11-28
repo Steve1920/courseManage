@@ -367,7 +367,8 @@ void CPeDialog::parsePe()
 	int result = validPeVerify();
 	if (result == 1) {
 		int ntOffset = parseDosHeader();
-		parseNtHeader(ntOffset);
+		int sectionSize = 0;
+		parseNtHeader(ntOffset, sectionSize);
 	}else if(result == 0){
 		MessageBox(_T("非PE格式文件，无法解析"), _T("消息框"), MB_OK);
 	}
@@ -624,6 +625,95 @@ int CPeDialog::validPeVerify()
 	else {
 		MessageBox(_T("打开文件失败"), _T("消息框"), MB_OK);
 		return -1;
+	}
+}
+void createOptionalHeaderLine64(int row, CString name, int offset, CString &sizeStr, ULONGLONG value, CGridCtrl &optionalCtrl) {
+	makeItemToCtrl(optionalCtrl, row, 0, name);
+	CString offsetStrMagic;
+	offsetStrMagic.Format(_T("%08X"), offset);
+	makeItemToCtrl(optionalCtrl, row, 1, offsetStrMagic);
+	makeItemToCtrl(optionalCtrl, row, 2, sizeStr);
+	CString valueStr;
+	if (row == 2 || row == 3) {
+		valueStr.Format(_T("%02X"), value);
+	}
+	else if (row == 1 || (row >= 13 && row <= 18)) {
+		valueStr.Format(_T("%04X"), value);
+	}
+	else {
+		valueStr.Format(_T("%08X"), value);
+	}
+	makeItemToCtrl(optionalCtrl, row, 3, valueStr);
+	if (row == 1) {
+		CString meaningStr;
+		if (value == IMAGE_NT_OPTIONAL_HDR32_MAGIC) {
+			meaningStr = _T("PE32");
+		}
+		else if (value == IMAGE_NT_OPTIONAL_HDR64_MAGIC) {
+			meaningStr = _T("PE64");
+		}
+		else if (value == IMAGE_ROM_OPTIONAL_HDR_MAGIC) {
+			meaningStr = _T("ROM");
+		}
+		else {
+			meaningStr = _T("Unknown value");
+		}
+		makeItemToCtrl(optionalCtrl, row, 4, meaningStr);
+	}
+	if (row == 7) {
+		makeItemToCtrl(optionalCtrl, row, 4, _T(".text"));
+	}
+	if (name == _T("Subsystem")) {
+		CString meaningStr;
+		switch (value)
+		{
+		case IMAGE_SUBSYSTEM_UNKNOWN:
+			meaningStr = _T("Unknown subsystem");
+			break;
+		case IMAGE_SUBSYSTEM_NATIVE:
+			meaningStr = _T("Native");
+			break;
+		case IMAGE_SUBSYSTEM_WINDOWS_GUI:
+			meaningStr = _T("Windows GUI");
+			break;
+		case IMAGE_SUBSYSTEM_WINDOWS_CUI:
+			meaningStr = _T("Windows CUI");
+			break;
+		case IMAGE_SUBSYSTEM_OS2_CUI:
+			meaningStr = _T("OS/2 CUI subsystem");
+			break;
+		case IMAGE_SUBSYSTEM_POSIX_CUI:
+			meaningStr = _T("POSIX CUI subsystem");
+			break;
+		case IMAGE_SUBSYSTEM_WINDOWS_CE_GUI:
+			meaningStr = _T("Windows CE system");
+			break;
+		case IMAGE_SUBSYSTEM_EFI_APPLICATION:
+			meaningStr = _T("EFI Application");
+			break;
+		case IMAGE_SUBSYSTEM_EFI_BOOT_SERVICE_DRIVER:
+			meaningStr = _T("EFI Boot Driver");
+			break;
+		case IMAGE_SUBSYSTEM_EFI_RUNTIME_DRIVER:
+			meaningStr = _T("EFI Runtime Driver");
+			break;
+		case IMAGE_SUBSYSTEM_EFI_ROM:
+			meaningStr = _T("EFI ROM");
+			break;
+		case IMAGE_SUBSYSTEM_XBOX:
+			meaningStr = _T("XBox");
+			break;
+		case IMAGE_SUBSYSTEM_WINDOWS_BOOT_APPLICATION:
+			meaningStr = _T("Windows Boot Application");
+			break;
+		default:
+			meaningStr = _T("Unknown subsystem");
+			break;
+		}
+		makeItemToCtrl(optionalCtrl, row, 4, meaningStr);
+	}
+	if (name == _T("DllCharacteristics")) {
+		makeItemToCtrl(optionalCtrl, row, 4, _T("Click here"));
 	}
 }
 void createOptionalHeaderLine(int row, CString name, int offset, CString &sizeStr, LONG value, CGridCtrl &optionalCtrl) {
@@ -911,6 +1001,18 @@ void CPeDialog::parseOptionalHeader32(int offset, IMAGE_OPTIONAL_HEADER32 & imag
 	createOptionalHeaderLine(30, _T("NumberOfRvaAndSizes"), offset, sizeStrAry[sizeof(image32.NumberOfRvaAndSizes) - 1], image32.NumberOfRvaAndSizes, m_optionalHeaderCtrl);
 	offset += sizeof(image32.NumberOfRvaAndSizes);
 	image32.DataDirectory;
+	IMAGE_DATA_DIRECTORY;
+	m_optionalHeaderCtrl.SetEditable(true);
+	m_optionalHeaderCtrl.SetTextBkColor(RGB(0xFF, 0xFF, 0xE0));//黄色背景
+	m_optionalHeaderCtrl.SetRowCount(31);
+	m_optionalHeaderCtrl.SetColumnCount(5);
+	m_optionalHeaderCtrl.SetFixedRowCount(1);
+	m_optionalHeaderCtrl.SetFixedColumnCount(3);
+	makeItemToCtrl(m_optionalHeaderCtrl, 0, 0, _T("Member"));
+	makeItemToCtrl(m_optionalHeaderCtrl, 0, 1, _T("Offset"));
+	makeItemToCtrl(m_optionalHeaderCtrl, 0, 2, _T("Size"));
+	makeItemToCtrl(m_optionalHeaderCtrl, 0, 3, _T("Value"));
+	makeItemToCtrl(m_optionalHeaderCtrl, 0, 4, _T("Meaning"));
 }
 
 void CPeDialog::parseOptionalHeader64(int offset, IMAGE_OPTIONAL_HEADER64 & image64)
@@ -932,7 +1034,7 @@ void CPeDialog::parseOptionalHeader64(int offset, IMAGE_OPTIONAL_HEADER64 & imag
 	offset += sizeof(image64.AddressOfEntryPoint);
 	createOptionalHeaderLine(8, _T("BaseOfCode"), offset, sizeStrAry[sizeof(image64.BaseOfCode) - 1], image64.BaseOfCode, m_optionalHeaderCtrl);
 	offset += sizeof(image64.BaseOfCode);
-	createOptionalHeaderLine(9, _T("ImageBase"), offset, sizeStrAry[sizeof(image64.ImageBase) - 1], image64.ImageBase, m_optionalHeaderCtrl);
+	createOptionalHeaderLine64(9, _T("ImageBase"), offset, sizeStrAry[sizeof(image64.ImageBase) - 1], image64.ImageBase, m_optionalHeaderCtrl);
 	offset += sizeof(image64.ImageBase);
 	createOptionalHeaderLine(10, _T("SectionAlignment"), offset, sizeStrAry[sizeof(image64.SectionAlignment) - 1], image64.SectionAlignment, m_optionalHeaderCtrl);
 	offset += sizeof(image64.SectionAlignment);
@@ -962,13 +1064,13 @@ void CPeDialog::parseOptionalHeader64(int offset, IMAGE_OPTIONAL_HEADER64 & imag
 	offset += sizeof(image64.Subsystem);
 	createOptionalHeaderLine(23, _T("DllCharacteristics"), offset, sizeStrAry[sizeof(image64.DllCharacteristics) - 1], image64.DllCharacteristics, m_optionalHeaderCtrl);
 	offset += sizeof(image64.DllCharacteristics);
-	createOptionalHeaderLine(24, _T("SizeOfStackReserve"), offset, sizeStrAry[sizeof(image64.SizeOfStackReserve) - 1], image64.SizeOfStackReserve, m_optionalHeaderCtrl);
+	createOptionalHeaderLine64(24, _T("SizeOfStackReserve"), offset, sizeStrAry[sizeof(image64.SizeOfStackReserve) - 1], image64.SizeOfStackReserve, m_optionalHeaderCtrl);
 	offset += sizeof(image64.SizeOfStackReserve);
-	createOptionalHeaderLine(25, _T("SizeOfStackCommit"), offset, sizeStrAry[sizeof(image64.SizeOfStackCommit) - 1], image64.SizeOfStackCommit, m_optionalHeaderCtrl);
+	createOptionalHeaderLine64(25, _T("SizeOfStackCommit"), offset, sizeStrAry[sizeof(image64.SizeOfStackCommit) - 1], image64.SizeOfStackCommit, m_optionalHeaderCtrl);
 	offset += sizeof(image64.SizeOfStackCommit);
-	createOptionalHeaderLine(26, _T("SizeOfHeapReserve"), offset, sizeStrAry[sizeof(image64.SizeOfHeapReserve) - 1], image64.SizeOfHeapReserve, m_optionalHeaderCtrl);
+	createOptionalHeaderLine64(26, _T("SizeOfHeapReserve"), offset, sizeStrAry[sizeof(image64.SizeOfHeapReserve) - 1], image64.SizeOfHeapReserve, m_optionalHeaderCtrl);
 	offset += sizeof(image64.SizeOfHeapReserve);
-	createOptionalHeaderLine(27, _T("SizeOfHeapCommit"), offset, sizeStrAry[sizeof(image64.SizeOfHeapCommit) - 1], image64.SizeOfHeapCommit, m_optionalHeaderCtrl);
+	createOptionalHeaderLine64(27, _T("SizeOfHeapCommit"), offset, sizeStrAry[sizeof(image64.SizeOfHeapCommit) - 1], image64.SizeOfHeapCommit, m_optionalHeaderCtrl);
 	offset += sizeof(image64.SizeOfHeapCommit);
 	createOptionalHeaderLine(28, _T("LoaderFlags"), offset, sizeStrAry[sizeof(image64.LoaderFlags) - 1], image64.LoaderFlags, m_optionalHeaderCtrl);
 	offset += sizeof(image64.LoaderFlags);
