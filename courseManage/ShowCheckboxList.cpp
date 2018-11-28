@@ -47,10 +47,6 @@ BOOL CShowCheckboxList::OnInitDialog()
 {
 	CDialogEx::OnInitDialog();
 	// TODO:  在此添加额外的初始化
-	CFont font; //在头文件中声明
-	//font.CreatePointFont(1, _T("宋体"));
-	font.CreateFont(0,0,0,0, FW_DONTCARE,0,0,0, OEM_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, FF_DONTCARE,NULL);
-	m_checkboxListCtrl.SetFont(&font);
 	m_checkboxListCtrl.SetExtendedStyle(WS_EX_NOPARENTNOTIFY | WS_EX_CLIENTEDGE | LVS_EX_GRIDLINES | LVS_EX_CHECKBOXES | LVS_EX_FULLROWSELECT | LVS_EDITLABELS);
 	int count = m_checkboxListCtrl.GetItemCount();
 	m_checkboxListCtrl.InsertColumn(count, (LPCTSTR)NULL);

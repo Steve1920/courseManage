@@ -44,9 +44,6 @@ BOOL CCharacteristics::OnInitDialog()
 {
 	CDialogEx::OnInitDialog();
 	// TODO:  在此添加额外的初始化
-	CFont font; //在头文件中声明
-	font.CreatePointFont(1, _T("宋体"));
-	m_valueList.SetFont(&font, true);
 	m_valueList.SetExtendedStyle(WS_EX_NOPARENTNOTIFY | WS_EX_CLIENTEDGE |LVS_EX_GRIDLINES | LVS_EX_CHECKBOXES | LVS_EX_FULLROWSELECT | LVS_EDITLABELS);
 	int count = m_valueList.GetItemCount();
 	m_valueList.InsertColumn(count, (LPCTSTR)NULL);
