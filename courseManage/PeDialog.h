@@ -69,4 +69,7 @@ public:
 	int currentSel;
 	IMAGE_SECTION_HEADER *m_sectionAry;
 	afx_msg void OnNcDestroy();
+	void dynamicCalcArea(int width, int height);
+	afx_msg void OnSize(UINT nType, int cx, int cy);
+	afx_msg void OnGetMinMaxInfo(MINMAXINFO* lpMMI);
 };

@@ -49,6 +49,8 @@ ON_NOTIFY(TVN_SELCHANGED, IDC_TREE_HEADERS, &CPeDialog::OnTvnSelchangedTreeHeade
 ON_NOTIFY(NM_CLICK, IDC_FILE_HEADER_CTRL, &CPeDialog::OnCharacteristicsClick)
 ON_NOTIFY(NM_CLICK, IDC_OPTIONAL_HEADER_CTRL, &CPeDialog::OnSubsystemClick)
 ON_WM_NCDESTROY()
+ON_WM_SIZE()
+ON_WM_GETMINMAXINFO()
 END_MESSAGE_MAP()
 
 
@@ -91,7 +93,10 @@ BOOL CPeDialog::OnInitDialog()
 	m_gridCtrl.ShowWindow(TRUE);
 	m_gridCtrlDown.ShowWindow(TRUE);
 	currentSel = -1;
-	ShowWindow(SW_MAXIMIZE);
+	//计算屏幕宽度，设置对话框长、宽各80%
+	int windowX = GetSystemMetrics(SM_CXSCREEN);
+	int windowY = GetSystemMetrics(SM_CYSCREEN);
+	dynamicCalcArea(windowX*0.8, windowY*0.8);
 	UpdateData(FALSE);
 	return TRUE;
 }
@@ -1469,4 +1474,34 @@ void CPeDialog::OnNcDestroy()
 		delete m_sectionAry;
 	}
 	// TODO: 在此处添加消息处理程序代码
+}
+
+void CPeDialog::dynamicCalcArea(int width,int height) {
+	//计算各个组件的高、宽
+	//再用MoveWindow
+	MoveWindow(0, 0, width, height, TRUE);
+	CenterWindow();
+}
+void CPeDialog::OnSize(UINT nType, int cx, int cy)
+{
+	CDialogEx::OnSize(nType, cx, cy);
+	if (cx <= 1 || cy <= 1)
+		return;
+	//if (nType == SIZE_RESTORED || nType == SIZE_MAXIMIZED)
+	//{
+	//	CRect rect;
+	//	GetClientRect(&rect);
+	//	ScreenToClient(rect);
+	//	// TODO: 在此处添加消息处理程序代码
+	//	dynamicCalcArea(rect.Width(), rect.Height());
+	//}
+}
+
+
+void CPeDialog::OnGetMinMaxInfo(MINMAXINFO* lpMMI)
+{
+	// TODO: 在此添加消息处理程序代码和/或调用默认值
+	lpMMI->ptMinTrackSize.x = 647;   //x宽度  
+	lpMMI->ptMinTrackSize.y = 522;   //y高度 
+	CDialogEx::OnGetMinMaxInfo(lpMMI);
 }
