@@ -91,6 +91,7 @@ BOOL CPeDialog::OnInitDialog()
 	m_gridCtrl.ShowWindow(TRUE);
 	m_gridCtrlDown.ShowWindow(TRUE);
 	currentSel = -1;
+	ShowWindow(SW_MAXIMIZE);
 	UpdateData(FALSE);
 	return TRUE;
 }
@@ -809,7 +810,10 @@ void createOptionalHeaderLine(int row, CString name, int offset, CString &sizeSt
 	}
 }
 void createSectionHeaderLine(int row, IMAGE_SECTION_HEADER &sectionHeader, CGridCtrl &sectionHeaderCtrl) {
-	CString nameStr(sectionHeader.Name);
+	BYTE tmpName[9];
+	memset(tmpName, 0, sizeof(tmpName));
+	memcpy(tmpName, sectionHeader.Name, sizeof(sectionHeader.Name));
+	CString nameStr(tmpName);
 	makeItemToCtrl(sectionHeaderCtrl, row, 0, nameStr);
 	CString virtualSizeStr;
 	virtualSizeStr.Format(_T("%08X"), sectionHeader.Misc.VirtualSize);
@@ -875,7 +879,7 @@ void CPeDialog::parseSection(int & ntOffset, int & sectionSize)
 		makeItemToCtrl(m_sectionHeadersCtrl, 2, 9, _T("Dword"));
 		if (ret > 0) {
 			int tmpRow = 3;
-			for (size_t i = 0; i < sectionSize; i++)
+			for (int i = 0; i < sectionSize; i++)
 			{
 				createSectionHeaderLine(tmpRow, m_sectionAry[i], m_sectionHeadersCtrl);
 				tmpRow++;
