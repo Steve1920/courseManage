@@ -48,6 +48,7 @@ BEGIN_MESSAGE_MAP(CPeDialog, CDialogEx)
 ON_NOTIFY(TVN_SELCHANGED, IDC_TREE_HEADERS, &CPeDialog::OnTvnSelchangedTreeHeaders)
 ON_NOTIFY(NM_CLICK, IDC_FILE_HEADER_CTRL, &CPeDialog::OnCharacteristicsClick)
 ON_NOTIFY(NM_CLICK, IDC_OPTIONAL_HEADER_CTRL, &CPeDialog::OnSubsystemClick)
+ON_WM_NCDESTROY()
 END_MESSAGE_MAP()
 
 
@@ -57,6 +58,7 @@ END_MESSAGE_MAP()
 BOOL CPeDialog::OnInitDialog()
 {
 	CDialogEx::OnInitDialog();
+	m_sectionAry = NULL;
 	int pathLength = m_exeFullPath.GetLength();
 	int position = m_exeFullPath.ReverseFind('/') + 1;
 	CString exeName = m_exeFullPath.Mid(position);
@@ -369,6 +371,7 @@ void CPeDialog::parsePe()
 		int ntOffset = parseDosHeader();
 		int sectionSize = 0;
 		parseNtHeader(ntOffset, sectionSize);
+		parseSection(ntOffset, sectionSize);
 	}else if(result == 0){
 		MessageBox(_T("非PE格式文件，无法解析"), _T("消息框"), MB_OK);
 	}
@@ -805,6 +808,87 @@ void createOptionalHeaderLine(int row, CString name, int offset, CString &sizeSt
 		makeItemToCtrl(optionalCtrl, row, 4, _T("Click here"));
 	}
 }
+void createSectionHeaderLine(int row, IMAGE_SECTION_HEADER &sectionHeader, CGridCtrl &sectionHeaderCtrl) {
+	CString nameStr(sectionHeader.Name);
+	makeItemToCtrl(sectionHeaderCtrl, row, 0, nameStr);
+	CString virtualSizeStr;
+	virtualSizeStr.Format(_T("%08X"), sectionHeader.Misc.VirtualSize);
+	makeItemToCtrl(sectionHeaderCtrl, row, 1, virtualSizeStr);
+	CString virtualAddressStr;
+	virtualAddressStr.Format(_T("%08X"), sectionHeader.VirtualAddress);
+	makeItemToCtrl(sectionHeaderCtrl, row, 2, virtualAddressStr);
+	CString rawSizeStr;
+	rawSizeStr.Format(_T("%08X"), sectionHeader.SizeOfRawData);
+	makeItemToCtrl(sectionHeaderCtrl, row, 3, rawSizeStr);
+	CString rawAddressStr;
+	rawAddressStr.Format(_T("%08X"), sectionHeader.PointerToRawData);
+	makeItemToCtrl(sectionHeaderCtrl, row, 4, rawAddressStr);
+	CString relocAddressStr;
+	relocAddressStr.Format(_T("%08X"), sectionHeader.PointerToRelocations);
+	makeItemToCtrl(sectionHeaderCtrl, row, 5, relocAddressStr);
+	CString lineNumbersStr;
+	lineNumbersStr.Format(_T("%08X"), sectionHeader.NumberOfLinenumbers);
+	makeItemToCtrl(sectionHeaderCtrl, row, 6, lineNumbersStr);
+	CString relocationsNumberStr;
+	relocationsNumberStr.Format(_T("%04X"), sectionHeader.NumberOfRelocations);
+	makeItemToCtrl(sectionHeaderCtrl, row, 7, relocationsNumberStr);
+	CString lineNumberNumbersStr;
+	lineNumberNumbersStr.Format(_T("%04X"), sectionHeader.NumberOfLinenumbers);
+	makeItemToCtrl(sectionHeaderCtrl, row, 8, lineNumberNumbersStr);
+	CString characteristicsStr;
+	characteristicsStr.Format(_T("%08X"), sectionHeader.Characteristics);
+	makeItemToCtrl(sectionHeaderCtrl, row, 9, characteristicsStr);
+}
+void CPeDialog::parseSection(int & ntOffset, int & sectionSize)
+{
+	CFile file;
+	BOOL result = file.Open(m_exeFullPath, CFile::modeRead);
+	if (result) {
+		CString sizeStrAry[4] = { _T("Byte"),_T("Word"),_T("") ,_T("Dword") };
+		file.Seek(ntOffset, CFile::begin);
+		m_sectionAry = new IMAGE_SECTION_HEADER[sectionSize];
+		UINT ret = file.Read(m_sectionAry, sizeof(IMAGE_SECTION_HEADER) * sectionSize);
+		m_sectionHeadersCtrl.SetEditable(true);
+		m_sectionHeadersCtrl.SetTextBkColor(RGB(0xFF, 0xFF, 0xE0));//黄色背景
+		m_sectionHeadersCtrl.SetRowCount(14);
+		m_sectionHeadersCtrl.SetColumnCount(10);
+		m_sectionHeadersCtrl.SetFixedRowCount(3);
+		makeItemToCtrl(m_sectionHeadersCtrl, 0, 0, _T("Name"));
+		makeItemToCtrl(m_sectionHeadersCtrl, 0, 1, _T("VirtualSize"));
+		makeItemToCtrl(m_sectionHeadersCtrl, 0, 2, _T("VirtualAddress"));
+		makeItemToCtrl(m_sectionHeadersCtrl, 0, 3, _T("RawSize"));
+		makeItemToCtrl(m_sectionHeadersCtrl, 0, 4, _T("RawAddress"));
+		makeItemToCtrl(m_sectionHeadersCtrl, 0, 5, _T("RelocAddress"));
+		makeItemToCtrl(m_sectionHeadersCtrl, 0, 6, _T("Linenumbers"));
+		makeItemToCtrl(m_sectionHeadersCtrl, 0, 7, _T("RelocationsNumber"));
+		makeItemToCtrl(m_sectionHeadersCtrl, 0, 8, _T("LinenumbersNumber"));
+		makeItemToCtrl(m_sectionHeadersCtrl, 0, 9, _T("Characteristics"));
+		makeItemToCtrl(m_sectionHeadersCtrl, 2, 0, _T("Byte[8]"));
+		makeItemToCtrl(m_sectionHeadersCtrl, 2, 1, _T("Dword"));
+		makeItemToCtrl(m_sectionHeadersCtrl, 2, 2, _T("Dword"));
+		makeItemToCtrl(m_sectionHeadersCtrl, 2, 3, _T("Dword"));
+		makeItemToCtrl(m_sectionHeadersCtrl, 2, 4, _T("Dword"));
+		makeItemToCtrl(m_sectionHeadersCtrl, 2, 5, _T("Dword"));
+		makeItemToCtrl(m_sectionHeadersCtrl, 2, 6, _T("Dword"));
+		makeItemToCtrl(m_sectionHeadersCtrl, 2, 7, _T("Word"));
+		makeItemToCtrl(m_sectionHeadersCtrl, 2, 8, _T("Word"));
+		makeItemToCtrl(m_sectionHeadersCtrl, 2, 9, _T("Dword"));
+		if (ret > 0) {
+			int tmpRow = 3;
+			for (size_t i = 0; i < sectionSize; i++)
+			{
+				createSectionHeaderLine(tmpRow, m_sectionAry[i], m_sectionHeadersCtrl);
+				tmpRow++;
+			}
+		}
+		file.Close();
+		return;
+	}
+	else {
+		MessageBox(_T("打开文件失败"), _T("消息框"), MB_OK);
+		return;
+	}
+}
 void CPeDialog::parseNtHeader(int &ntOffset,int &sectionSize)
 {
 	m_ntHeadersCtrl.SetEditable(true);
@@ -937,6 +1021,7 @@ void CPeDialog::parseNtHeader(int &ntOffset,int &sectionSize)
 		return;
 	}
 }
+
 void createDataDirectoryHeaderLine(int row, CString name, int offset, CString &sizeStr, LONG value, CGridCtrl &optionalCtrl) {
 	makeItemToCtrl(optionalCtrl, row, 0, name);
 	CString offsetStrMagic;
@@ -1187,7 +1272,6 @@ void CPeDialog::parseOptionalHeader32(int offset, IMAGE_OPTIONAL_HEADER32 & imag
 		sizeStrAry[sizeof(image32.DataDirectory[IMAGE_DIRECTORY_ENTRY_COM_DESCRIPTOR].Size) - 1],
 		image32.DataDirectory[IMAGE_DIRECTORY_ENTRY_COM_DESCRIPTOR].Size, m_dataDirectoriesCtrl);
 	offset += sizeof(image32.DataDirectory[IMAGE_DIRECTORY_ENTRY_COM_DESCRIPTOR].Size);
-
 }
 
 void CPeDialog::parseOptionalHeader64(int offset, IMAGE_OPTIONAL_HEADER64 & image64)
@@ -1251,4 +1335,134 @@ void CPeDialog::parseOptionalHeader64(int offset, IMAGE_OPTIONAL_HEADER64 & imag
 	offset += sizeof(image64.LoaderFlags);
 	createOptionalHeaderLine(29, _T("NumberOfRvaAndSizes"), offset, sizeStrAry[sizeof(image64.NumberOfRvaAndSizes) - 1], image64.NumberOfRvaAndSizes, m_optionalHeaderCtrl);
 	offset += sizeof(image64.NumberOfRvaAndSizes);
+	createDataDirectoryHeaderLine(1, _T("Export Directory RVA"), offset,
+		sizeStrAry[sizeof(image64.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].VirtualAddress) - 1],
+		image64.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].VirtualAddress, m_dataDirectoriesCtrl);
+	offset += sizeof(image64.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].VirtualAddress);
+	createDataDirectoryHeaderLine(2, _T("Export Directory Size"), offset,
+		sizeStrAry[sizeof(image64.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].Size) - 1],
+		image64.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].Size, m_dataDirectoriesCtrl);
+	offset += sizeof(image64.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].Size);
+	createDataDirectoryHeaderLine(3, _T("Import Directory RVA"), offset,
+		sizeStrAry[sizeof(image64.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].VirtualAddress) - 1],
+		image64.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].VirtualAddress, m_dataDirectoriesCtrl);
+	offset += sizeof(image64.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].VirtualAddress);
+	createDataDirectoryHeaderLine(4, _T("Import Directory Size"), offset,
+		sizeStrAry[sizeof(image64.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].Size) - 1],
+		image64.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].Size, m_dataDirectoriesCtrl);
+	offset += sizeof(image64.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].Size);
+	createDataDirectoryHeaderLine(5, _T("Resource Directory RVA"), offset,
+		sizeStrAry[sizeof(image64.DataDirectory[IMAGE_DIRECTORY_ENTRY_RESOURCE].VirtualAddress) - 1],
+		image64.DataDirectory[IMAGE_DIRECTORY_ENTRY_RESOURCE].VirtualAddress, m_dataDirectoriesCtrl);
+	offset += sizeof(image64.DataDirectory[IMAGE_DIRECTORY_ENTRY_RESOURCE].VirtualAddress);
+	createDataDirectoryHeaderLine(6, _T("Resource Directory Size"), offset,
+		sizeStrAry[sizeof(image64.DataDirectory[IMAGE_DIRECTORY_ENTRY_RESOURCE].Size) - 1],
+		image64.DataDirectory[IMAGE_DIRECTORY_ENTRY_RESOURCE].Size, m_dataDirectoriesCtrl);
+	offset += sizeof(image64.DataDirectory[IMAGE_DIRECTORY_ENTRY_RESOURCE].Size);
+	createDataDirectoryHeaderLine(7, _T("Exception Directory RVA"), offset,
+		sizeStrAry[sizeof(image64.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXCEPTION].VirtualAddress) - 1],
+		image64.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXCEPTION].VirtualAddress, m_dataDirectoriesCtrl);
+	offset += sizeof(image64.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXCEPTION].VirtualAddress);
+	createDataDirectoryHeaderLine(8, _T("Exception Directory Size"), offset,
+		sizeStrAry[sizeof(image64.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXCEPTION].Size) - 1],
+		image64.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXCEPTION].Size, m_dataDirectoriesCtrl);
+	offset += sizeof(image64.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXCEPTION].Size);
+	createDataDirectoryHeaderLine(9, _T("Security Directory RVA"), offset,
+		sizeStrAry[sizeof(image64.DataDirectory[IMAGE_DIRECTORY_ENTRY_SECURITY].VirtualAddress) - 1],
+		image64.DataDirectory[IMAGE_DIRECTORY_ENTRY_SECURITY].VirtualAddress, m_dataDirectoriesCtrl);
+	offset += sizeof(image64.DataDirectory[IMAGE_DIRECTORY_ENTRY_SECURITY].VirtualAddress);
+	createDataDirectoryHeaderLine(10, _T("Security Directory Size"), offset,
+		sizeStrAry[sizeof(image64.DataDirectory[IMAGE_DIRECTORY_ENTRY_SECURITY].Size) - 1],
+		image64.DataDirectory[IMAGE_DIRECTORY_ENTRY_SECURITY].Size, m_dataDirectoriesCtrl);
+	offset += sizeof(image64.DataDirectory[IMAGE_DIRECTORY_ENTRY_SECURITY].Size);
+	createDataDirectoryHeaderLine(11, _T("Base Relocation Table RVA"), offset,
+		sizeStrAry[sizeof(image64.DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC].VirtualAddress) - 1],
+		image64.DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC].VirtualAddress, m_dataDirectoriesCtrl);
+	offset += sizeof(image64.DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC].VirtualAddress);
+	createDataDirectoryHeaderLine(12, _T("Base Relocation Table Size"), offset,
+		sizeStrAry[sizeof(image64.DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC].Size) - 1],
+		image64.DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC].Size, m_dataDirectoriesCtrl);
+	offset += sizeof(image64.DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC].Size);
+	createDataDirectoryHeaderLine(13, _T("Debug Directory RVA"), offset,
+		sizeStrAry[sizeof(image64.DataDirectory[IMAGE_DIRECTORY_ENTRY_DEBUG].VirtualAddress) - 1],
+		image64.DataDirectory[IMAGE_DIRECTORY_ENTRY_DEBUG].VirtualAddress, m_dataDirectoriesCtrl);
+	offset += sizeof(image64.DataDirectory[IMAGE_DIRECTORY_ENTRY_DEBUG].VirtualAddress);
+	createDataDirectoryHeaderLine(14, _T("Debug Directory Size"), offset,
+		sizeStrAry[sizeof(image64.DataDirectory[IMAGE_DIRECTORY_ENTRY_DEBUG].Size) - 1],
+		image64.DataDirectory[IMAGE_DIRECTORY_ENTRY_DEBUG].Size, m_dataDirectoriesCtrl);
+	offset += sizeof(image64.DataDirectory[IMAGE_DIRECTORY_ENTRY_DEBUG].Size);
+	createDataDirectoryHeaderLine(15, _T("Architecture Directory RVA"), offset,
+		sizeStrAry[sizeof(image64.DataDirectory[IMAGE_DIRECTORY_ENTRY_ARCHITECTURE].VirtualAddress) - 1],
+		image64.DataDirectory[IMAGE_DIRECTORY_ENTRY_ARCHITECTURE].VirtualAddress, m_dataDirectoriesCtrl);
+	offset += sizeof(image64.DataDirectory[IMAGE_DIRECTORY_ENTRY_ARCHITECTURE].VirtualAddress);
+	createDataDirectoryHeaderLine(16, _T("Architecture Directory Size"), offset,
+		sizeStrAry[sizeof(image64.DataDirectory[IMAGE_DIRECTORY_ENTRY_ARCHITECTURE].Size) - 1],
+		image64.DataDirectory[IMAGE_DIRECTORY_ENTRY_ARCHITECTURE].Size, m_dataDirectoriesCtrl);
+	offset += sizeof(image64.DataDirectory[IMAGE_DIRECTORY_ENTRY_ARCHITECTURE].Size);
+	createDataDirectoryHeaderLine(17, _T("Reserved"), offset,
+		sizeStrAry[sizeof(image64.DataDirectory[IMAGE_DIRECTORY_ENTRY_GLOBALPTR].VirtualAddress) - 1],
+		image64.DataDirectory[IMAGE_DIRECTORY_ENTRY_GLOBALPTR].VirtualAddress, m_dataDirectoriesCtrl);
+	offset += sizeof(image64.DataDirectory[IMAGE_DIRECTORY_ENTRY_GLOBALPTR].VirtualAddress);
+	createDataDirectoryHeaderLine(18, _T("Reserved"), offset,
+		sizeStrAry[sizeof(image64.DataDirectory[IMAGE_DIRECTORY_ENTRY_GLOBALPTR].Size) - 1],
+		image64.DataDirectory[IMAGE_DIRECTORY_ENTRY_GLOBALPTR].Size, m_dataDirectoriesCtrl);
+	offset += sizeof(image64.DataDirectory[IMAGE_DIRECTORY_ENTRY_GLOBALPTR].Size);
+	createDataDirectoryHeaderLine(19, _T("TLS Directory RVA"), offset,
+		sizeStrAry[sizeof(image64.DataDirectory[IMAGE_DIRECTORY_ENTRY_TLS].VirtualAddress) - 1],
+		image64.DataDirectory[IMAGE_DIRECTORY_ENTRY_TLS].VirtualAddress, m_dataDirectoriesCtrl);
+	offset += sizeof(image64.DataDirectory[IMAGE_DIRECTORY_ENTRY_TLS].VirtualAddress);
+	createDataDirectoryHeaderLine(20, _T("TLS Directory Size"), offset,
+		sizeStrAry[sizeof(image64.DataDirectory[IMAGE_DIRECTORY_ENTRY_TLS].Size) - 1],
+		image64.DataDirectory[IMAGE_DIRECTORY_ENTRY_TLS].Size, m_dataDirectoriesCtrl);
+	offset += sizeof(image64.DataDirectory[IMAGE_DIRECTORY_ENTRY_TLS].Size);
+	createDataDirectoryHeaderLine(21, _T("Configuration Directory RVA"), offset,
+		sizeStrAry[sizeof(image64.DataDirectory[IMAGE_DIRECTORY_ENTRY_LOAD_CONFIG].VirtualAddress) - 1],
+		image64.DataDirectory[IMAGE_DIRECTORY_ENTRY_LOAD_CONFIG].VirtualAddress, m_dataDirectoriesCtrl);
+	offset += sizeof(image64.DataDirectory[IMAGE_DIRECTORY_ENTRY_LOAD_CONFIG].VirtualAddress);
+	createDataDirectoryHeaderLine(22, _T("Configuration Directory Size"), offset,
+		sizeStrAry[sizeof(image64.DataDirectory[IMAGE_DIRECTORY_ENTRY_LOAD_CONFIG].Size) - 1],
+		image64.DataDirectory[IMAGE_DIRECTORY_ENTRY_LOAD_CONFIG].Size, m_dataDirectoriesCtrl);
+	offset += sizeof(image64.DataDirectory[IMAGE_DIRECTORY_ENTRY_LOAD_CONFIG].Size);
+	createDataDirectoryHeaderLine(23, _T("Bound Import Directory RVA"), offset,
+		sizeStrAry[sizeof(image64.DataDirectory[IMAGE_DIRECTORY_ENTRY_BOUND_IMPORT].VirtualAddress) - 1],
+		image64.DataDirectory[IMAGE_DIRECTORY_ENTRY_BOUND_IMPORT].VirtualAddress, m_dataDirectoriesCtrl);
+	offset += sizeof(image64.DataDirectory[IMAGE_DIRECTORY_ENTRY_BOUND_IMPORT].VirtualAddress);
+	createDataDirectoryHeaderLine(24, _T("Bound Import Directory Size"), offset,
+		sizeStrAry[sizeof(image64.DataDirectory[IMAGE_DIRECTORY_ENTRY_BOUND_IMPORT].Size) - 1],
+		image64.DataDirectory[IMAGE_DIRECTORY_ENTRY_BOUND_IMPORT].Size, m_dataDirectoriesCtrl);
+	offset += sizeof(image64.DataDirectory[IMAGE_DIRECTORY_ENTRY_BOUND_IMPORT].Size);
+	createDataDirectoryHeaderLine(25, _T("Import Address Table Directory RVA"), offset,
+		sizeStrAry[sizeof(image64.DataDirectory[IMAGE_DIRECTORY_ENTRY_IAT].VirtualAddress) - 1],
+		image64.DataDirectory[IMAGE_DIRECTORY_ENTRY_IAT].VirtualAddress, m_dataDirectoriesCtrl);
+	offset += sizeof(image64.DataDirectory[IMAGE_DIRECTORY_ENTRY_IAT].VirtualAddress);
+	createDataDirectoryHeaderLine(26, _T("Import Address Table Directory Size"), offset,
+		sizeStrAry[sizeof(image64.DataDirectory[IMAGE_DIRECTORY_ENTRY_IAT].Size) - 1],
+		image64.DataDirectory[IMAGE_DIRECTORY_ENTRY_IAT].Size, m_dataDirectoriesCtrl);
+	offset += sizeof(image64.DataDirectory[IMAGE_DIRECTORY_ENTRY_IAT].Size);
+	createDataDirectoryHeaderLine(27, _T("Delay Import Directory RVA"), offset,
+		sizeStrAry[sizeof(image64.DataDirectory[IMAGE_DIRECTORY_ENTRY_DELAY_IMPORT].VirtualAddress) - 1],
+		image64.DataDirectory[IMAGE_DIRECTORY_ENTRY_DELAY_IMPORT].VirtualAddress, m_dataDirectoriesCtrl);
+	offset += sizeof(image64.DataDirectory[IMAGE_DIRECTORY_ENTRY_DELAY_IMPORT].VirtualAddress);
+	createDataDirectoryHeaderLine(28, _T("Delay Import Directory Size"), offset,
+		sizeStrAry[sizeof(image64.DataDirectory[IMAGE_DIRECTORY_ENTRY_DELAY_IMPORT].Size) - 1],
+		image64.DataDirectory[IMAGE_DIRECTORY_ENTRY_DELAY_IMPORT].Size, m_dataDirectoriesCtrl);
+	offset += sizeof(image64.DataDirectory[IMAGE_DIRECTORY_ENTRY_DELAY_IMPORT].Size);
+	createDataDirectoryHeaderLine(29, _T("COM Runtime Directory RVA"), offset,
+		sizeStrAry[sizeof(image64.DataDirectory[IMAGE_DIRECTORY_ENTRY_COM_DESCRIPTOR].VirtualAddress) - 1],
+		image64.DataDirectory[IMAGE_DIRECTORY_ENTRY_COM_DESCRIPTOR].VirtualAddress, m_dataDirectoriesCtrl);
+	offset += sizeof(image64.DataDirectory[IMAGE_DIRECTORY_ENTRY_COM_DESCRIPTOR].VirtualAddress);
+	createDataDirectoryHeaderLine(30, _T("COM Runtime Directory Size"), offset,
+		sizeStrAry[sizeof(image64.DataDirectory[IMAGE_DIRECTORY_ENTRY_COM_DESCRIPTOR].Size) - 1],
+		image64.DataDirectory[IMAGE_DIRECTORY_ENTRY_COM_DESCRIPTOR].Size, m_dataDirectoriesCtrl);
+	offset += sizeof(image64.DataDirectory[IMAGE_DIRECTORY_ENTRY_COM_DESCRIPTOR].Size);
+}
+
+
+void CPeDialog::OnNcDestroy()
+{
+	CDialogEx::OnNcDestroy();
+	if (m_sectionAry) {
+		delete m_sectionAry;
+	}
+	// TODO: 在此处添加消息处理程序代码
 }
