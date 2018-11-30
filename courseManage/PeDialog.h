@@ -67,9 +67,10 @@ public:
 	void parseOptionalHeader32(int offset, IMAGE_OPTIONAL_HEADER32 &image32);
 	void parseOptionalHeader64(int offset, IMAGE_OPTIONAL_HEADER64 &image64);
 	int currentSel;
+	bool isInitResize;
 	IMAGE_SECTION_HEADER *m_sectionAry;
 	afx_msg void OnNcDestroy();
-	void dynamicCalcArea(int width, int height);
+	void moveWindowCenterAndSetsize(int width, int height);
 	afx_msg void OnSize(UINT nType, int cx, int cy);
 	afx_msg void OnGetMinMaxInfo(MINMAXINFO* lpMMI);
 };

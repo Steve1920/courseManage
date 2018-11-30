@@ -56,7 +56,25 @@ END_MESSAGE_MAP()
 
 // CPeDialog 消息处理程序
 
-
+void CPeDialog::moveWindowCenterAndSetsize(int width, int height) {
+	//计算各个组件的高、宽
+	//再用MoveWindow
+	MoveWindow(0, 0, width, height, TRUE);
+	CenterWindow();
+}
+void CPeDialog::OnSize(UINT nType, int cx, int cy)
+{
+	CDialogEx::OnSize(nType, cx, cy);
+	if (cx <= 1 || cy <= 1)
+		return;
+	if (nType == SIZE_RESTORED || nType == SIZE_MAXIMIZED)
+	{
+		CRect rect;
+		GetClientRect(&rect);
+		ScreenToClient(rect);
+		// TODO: 在此处添加消息处理程序代码
+	}
+}
 BOOL CPeDialog::OnInitDialog()
 {
 	CDialogEx::OnInitDialog();
@@ -96,7 +114,7 @@ BOOL CPeDialog::OnInitDialog()
 	//计算屏幕宽度，设置对话框长、宽各80%
 	int windowX = GetSystemMetrics(SM_CXSCREEN);
 	int windowY = GetSystemMetrics(SM_CYSCREEN);
-	dynamicCalcArea(windowX*0.8, windowY*0.8);
+	moveWindowCenterAndSetsize(windowX*0.8, windowY*0.8);
 	UpdateData(FALSE);
 	return TRUE;
 }
@@ -1475,28 +1493,6 @@ void CPeDialog::OnNcDestroy()
 	}
 	// TODO: 在此处添加消息处理程序代码
 }
-
-void CPeDialog::dynamicCalcArea(int width,int height) {
-	//计算各个组件的高、宽
-	//再用MoveWindow
-	MoveWindow(0, 0, width, height, TRUE);
-	CenterWindow();
-}
-void CPeDialog::OnSize(UINT nType, int cx, int cy)
-{
-	CDialogEx::OnSize(nType, cx, cy);
-	if (cx <= 1 || cy <= 1)
-		return;
-	//if (nType == SIZE_RESTORED || nType == SIZE_MAXIMIZED)
-	//{
-	//	CRect rect;
-	//	GetClientRect(&rect);
-	//	ScreenToClient(rect);
-	//	// TODO: 在此处添加消息处理程序代码
-	//	dynamicCalcArea(rect.Width(), rect.Height());
-	//}
-}
-
 
 void CPeDialog::OnGetMinMaxInfo(MINMAXINFO* lpMMI)
 {
