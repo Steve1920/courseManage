@@ -53,11 +53,37 @@ ON_WM_SIZE()
 ON_WM_GETMINMAXINFO()
 END_MESSAGE_MAP()
 
-
+void CPeDialog::dynamicCalcItemSize(int width, int height)
+{
+	int itemHeight = height - 6;
+	CRect treeRect;
+	CWnd* tree = GetDlgItem(IDC_TREE_HEADERS);
+	if (tree) {
+		tree->GetWindowRect(&treeRect);
+		m_tree.SetWindowPos(NULL, 0, 0, treeRect.Width(), itemHeight, SWP_NOZORDER | SWP_NOMOVE);
+		CRect tmpRect;
+		CWnd* mainUp = GetDlgItem(IDC_PEMAINPAGE);
+		if (mainUp) {
+			mainUp->GetWindowRect(&tmpRect);
+			m_gridCtrl.SetWindowPos(NULL, 0, 0, width - treeRect.Width() - 6, tmpRect.Height(), SWP_NOZORDER | SWP_NOMOVE);
+		}
+		CWnd* mainDown = GetDlgItem(IDC_MAIN_DOWN);
+		if (mainDown) {
+			mainDown->GetWindowRect(&tmpRect);
+			m_gridCtrlDown.SetWindowPos(NULL, 0, 0, width - treeRect.Width() - 7, tmpRect.Height(), SWP_NOZORDER | SWP_NOMOVE);
+		}
+		m_dosHeaderCtrl.SetWindowPos(NULL, 0, 0, width - treeRect.Width() - 7, itemHeight, SWP_NOZORDER | SWP_NOMOVE);
+		m_ntHeadersCtrl.SetWindowPos(NULL, 0, 0, width - treeRect.Width() - 7, itemHeight, SWP_NOZORDER | SWP_NOMOVE);
+		m_fileHeaderCtrl.SetWindowPos(NULL, 0, 0, width - treeRect.Width() - 7, itemHeight, SWP_NOZORDER | SWP_NOMOVE);
+		m_optionalHeaderCtrl.SetWindowPos(NULL, 0, 0, width - treeRect.Width() - 7, itemHeight, SWP_NOZORDER | SWP_NOMOVE);
+		m_dataDirectoriesCtrl.SetWindowPos(NULL, 0, 0, width - treeRect.Width() - 7, itemHeight, SWP_NOZORDER | SWP_NOMOVE);
+		m_sectionHeadersCtrl.SetWindowPos(NULL, 0, 0, width - treeRect.Width() - 7, itemHeight, SWP_NOZORDER | SWP_NOMOVE);
+	}
+}
 // CPeDialog 消息处理程序
-
 void CPeDialog::moveWindowCenterAndSetsize(int width, int height) {
 	//计算各个组件的高、宽
+	dynamicCalcItemSize(width, height);
 	//再用MoveWindow
 	MoveWindow(0, 0, width, height, TRUE);
 	CenterWindow();
@@ -72,6 +98,7 @@ void CPeDialog::OnSize(UINT nType, int cx, int cy)
 		CRect rect;
 		GetClientRect(&rect);
 		ScreenToClient(rect);
+		dynamicCalcItemSize(rect.Width(),rect.Height());
 		// TODO: 在此处添加消息处理程序代码
 	}
 }
