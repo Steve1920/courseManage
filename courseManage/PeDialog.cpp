@@ -56,12 +56,8 @@ END_MESSAGE_MAP()
 int sectionHeaderOffset = 0;
 void CPeDialog::OnSectionCtrlClick(NMHDR * pNotifyStruct, LRESULT * pResult)
 {
+	int tmpOffset = sectionHeaderOffset;
 	IMAGE_SECTION_HEADER tmpSection;
-	/*int lineSize = sizeof(tmpSection.Name) + sizeof(tmpSection.Misc)
-		+ sizeof(tmpSection.VirtualAddress) + sizeof(tmpSection.SizeOfRawData) + 
-		sizeof(tmpSection.PointerToRawData) + sizeof(tmpSection.PointerToRelocations)
-		+ sizeof(tmpSection.NumberOfLinenumbers) + sizeof(tmpSection.NumberOfRelocations)
-		+ sizeof(tmpSection.NumberOfRelocations) + sizeof(tmpSection.Characteristics);*/
 	int lineSize = sizeof(IMAGE_SECTION_HEADER);
 	NM_GRIDVIEW* pItem = (NM_GRIDVIEW*)pNotifyStruct;
 	NMHDR hdr = pItem->hdr;
@@ -70,46 +66,47 @@ void CPeDialog::OnSectionCtrlClick(NMHDR * pNotifyStruct, LRESULT * pResult)
 		return;
 	}
 	int column = pItem->iColumn;
-	sectionHeaderOffset += (row - 3) * lineSize;
+	tmpOffset += (row - 3) * lineSize;
 	CString nameStr;
-	nameStr.Format(_T("%08X"), sectionHeaderOffset);
+	nameStr.Format(_T("%08X"), tmpOffset);
 	makeItemToCtrl(m_sectionHeadersCtrl, 1, 0, nameStr);
-	sectionHeaderOffset += sizeof(tmpSection.Name);
+	tmpOffset += sizeof(tmpSection.Name);
 	CString virtualSizeStr;
-	virtualSizeStr.Format(_T("%08X"), sectionHeaderOffset);
+	virtualSizeStr.Format(_T("%08X"), tmpOffset);
 	makeItemToCtrl(m_sectionHeadersCtrl, 1, 1, virtualSizeStr);
-	sectionHeaderOffset += sizeof(tmpSection.Misc);
+	tmpOffset += sizeof(tmpSection.Misc);
 	CString virtualAddressStr;
-	virtualAddressStr.Format(_T("%08X"), sectionHeaderOffset);
+	virtualAddressStr.Format(_T("%08X"), tmpOffset);
 	makeItemToCtrl(m_sectionHeadersCtrl, 1, 2, virtualAddressStr);
-	sectionHeaderOffset += sizeof(tmpSection.VirtualAddress);
+	tmpOffset += sizeof(tmpSection.VirtualAddress);
 	CString rawSizeStr;
-	rawSizeStr.Format(_T("%08X"), sectionHeaderOffset);
+	rawSizeStr.Format(_T("%08X"), tmpOffset);
 	makeItemToCtrl(m_sectionHeadersCtrl, 1, 3, rawSizeStr);
-	sectionHeaderOffset += sizeof(tmpSection.SizeOfRawData);
+	tmpOffset += sizeof(tmpSection.SizeOfRawData);
 	CString rawAddressStr;
-	rawAddressStr.Format(_T("%08X"), sectionHeaderOffset);
+	rawAddressStr.Format(_T("%08X"), tmpOffset);
 	makeItemToCtrl(m_sectionHeadersCtrl, 1, 4, rawAddressStr);
-	sectionHeaderOffset += sizeof(tmpSection.PointerToRawData);
+	tmpOffset += sizeof(tmpSection.PointerToRawData);
 	CString relocAddressStr;
-	relocAddressStr.Format(_T("%08X"), sectionHeaderOffset);
+	relocAddressStr.Format(_T("%08X"), tmpOffset);
 	makeItemToCtrl(m_sectionHeadersCtrl, 1, 5, relocAddressStr);
-	sectionHeaderOffset += sizeof(tmpSection.PointerToRelocations);
+	tmpOffset += sizeof(tmpSection.PointerToRelocations);
 	CString lineNumbersStr;
-	lineNumbersStr.Format(_T("%08X"), sectionHeaderOffset);
+	lineNumbersStr.Format(_T("%08X"), tmpOffset);
 	makeItemToCtrl(m_sectionHeadersCtrl, 1, 6, lineNumbersStr);
-	sectionHeaderOffset += sizeof(tmpSection.NumberOfLinenumbers);
+	tmpOffset += sizeof(tmpSection.NumberOfLinenumbers);
 	CString relocationsNumberStr;
-	relocationsNumberStr.Format(_T("%08X"), sectionHeaderOffset);
+	relocationsNumberStr.Format(_T("%08X"), tmpOffset);
 	makeItemToCtrl(m_sectionHeadersCtrl, 1, 7, relocationsNumberStr);
-	sectionHeaderOffset += sizeof(tmpSection.NumberOfRelocations);
+	tmpOffset += sizeof(tmpSection.NumberOfRelocations);
 	CString lineNumberNumbersStr;
-	lineNumberNumbersStr.Format(_T("%08X"), sectionHeaderOffset);
+	lineNumberNumbersStr.Format(_T("%08X"), tmpOffset);
 	makeItemToCtrl(m_sectionHeadersCtrl, 1, 8, lineNumberNumbersStr);
-	sectionHeaderOffset += sizeof(tmpSection.NumberOfLinenumbers);
+	tmpOffset += sizeof(tmpSection.NumberOfLinenumbers);
 	CString characteristicsStr;
-	characteristicsStr.Format(_T("%08X"), sectionHeaderOffset);
+	characteristicsStr.Format(_T("%08X"), tmpOffset);
 	makeItemToCtrl(m_sectionHeadersCtrl, 1, 9, characteristicsStr);
+	m_sectionHeadersCtrl.Refresh();
 }
 void CPeDialog::dynamicCalcItemSize(int width, int height)
 {
@@ -270,9 +267,53 @@ void CPeDialog::GridCtrlInit_down()
 				m_gridCtrlDown.SetColumnWidth(col, 300); //设置各列宽
 			}
 			else {
-				m_gridCtrlDown.SetColumnWidth(col, 100); //设置各列宽
+				m_gridCtrlDown.SetColumnWidth(col, 150); //设置各列宽
 			}
 		}
+	}
+	DWORD fileVersionSize = GetFileVersionInfoSize(m_exeFullPath, NULL);
+	if (fileVersionSize) {
+		char *lpData = new char[fileVersionSize + 1];
+		BOOL queryRst = GetFileVersionInfo(
+			m_exeFullPath,
+			0,
+			fileVersionSize,
+			lpData
+		);
+		if (queryRst) {
+			LPVOID  *lplpBuffer = (LPVOID*)new char[200];
+			memset(lplpBuffer, 0, 200);
+			UINT tmpSize = 0;
+			struct LANGANDCODEPAGE {
+				WORD wLanguage;
+				WORD wCodePage;
+			} *lpTranslate;
+			queryRst = VerQueryValue(lpData,
+				_T("\\VarFileInfo\\Translation"),
+				(LPVOID*)&lpTranslate,
+				&tmpSize);
+			CString cs;
+			cs.Format(_T("\\StringFileInfo\\%04x%04x\\CompanyName"), lpTranslate[0].wLanguage, lpTranslate[0].wCodePage);
+			queryRst = VerQueryValue(lpData,
+				cs,
+				(LPVOID*)&lplpBuffer,
+				&tmpSize);
+			CString companyName = (LPCTSTR)lplpBuffer;
+			if (queryRst) {
+				makeItemToCtrl(m_gridCtrlDown,1,1, companyName);
+			}
+			memset(lplpBuffer, 0, 200);
+			cs.Format(_T("\\StringFileInfo\\%04x%04x\\FileDescription"), lpTranslate[0].wLanguage, lpTranslate[0].wCodePage);
+			queryRst = VerQueryValue(lpData,
+				cs,
+				(LPVOID*)&lplpBuffer,
+				&tmpSize);
+			CString FileDescription = (LPCTSTR)lplpBuffer;
+			if (queryRst) {
+				makeItemToCtrl(m_gridCtrlDown, 2, 1, FileDescription);
+			}
+		}
+		delete[] lpData;
 	}
 }
 
