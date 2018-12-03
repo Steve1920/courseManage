@@ -48,14 +48,72 @@ BEGIN_MESSAGE_MAP(CPeDialog, CDialogEx)
 ON_NOTIFY(TVN_SELCHANGED, IDC_TREE_HEADERS, &CPeDialog::OnTvnSelchangedTreeHeaders)
 ON_NOTIFY(NM_CLICK, IDC_FILE_HEADER_CTRL, &CPeDialog::OnCharacteristicsClick)
 ON_NOTIFY(NM_CLICK, IDC_OPTIONAL_HEADER_CTRL, &CPeDialog::OnSubsystemClick)
+ON_NOTIFY(NM_CLICK, IDC_SECTION_HEADER_CTRL, &CPeDialog::OnSectionCtrlClick)
 ON_WM_NCDESTROY()
 ON_WM_SIZE()
 ON_WM_GETMINMAXINFO()
 END_MESSAGE_MAP()
-
+int sectionHeaderOffset = 0;
+void CPeDialog::OnSectionCtrlClick(NMHDR * pNotifyStruct, LRESULT * pResult)
+{
+	IMAGE_SECTION_HEADER tmpSection;
+	/*int lineSize = sizeof(tmpSection.Name) + sizeof(tmpSection.Misc)
+		+ sizeof(tmpSection.VirtualAddress) + sizeof(tmpSection.SizeOfRawData) + 
+		sizeof(tmpSection.PointerToRawData) + sizeof(tmpSection.PointerToRelocations)
+		+ sizeof(tmpSection.NumberOfLinenumbers) + sizeof(tmpSection.NumberOfRelocations)
+		+ sizeof(tmpSection.NumberOfRelocations) + sizeof(tmpSection.Characteristics);*/
+	int lineSize = sizeof(IMAGE_SECTION_HEADER);
+	NM_GRIDVIEW* pItem = (NM_GRIDVIEW*)pNotifyStruct;
+	NMHDR hdr = pItem->hdr;
+	int row = pItem->iRow;
+	if (row < 3) {
+		return;
+	}
+	int column = pItem->iColumn;
+	sectionHeaderOffset += (row - 3) * lineSize;
+	CString nameStr;
+	nameStr.Format(_T("%08X"), sectionHeaderOffset);
+	makeItemToCtrl(m_sectionHeadersCtrl, 1, 0, nameStr);
+	sectionHeaderOffset += sizeof(tmpSection.Name);
+	CString virtualSizeStr;
+	virtualSizeStr.Format(_T("%08X"), sectionHeaderOffset);
+	makeItemToCtrl(m_sectionHeadersCtrl, 1, 1, virtualSizeStr);
+	sectionHeaderOffset += sizeof(tmpSection.Misc);
+	CString virtualAddressStr;
+	virtualAddressStr.Format(_T("%08X"), sectionHeaderOffset);
+	makeItemToCtrl(m_sectionHeadersCtrl, 1, 2, virtualAddressStr);
+	sectionHeaderOffset += sizeof(tmpSection.VirtualAddress);
+	CString rawSizeStr;
+	rawSizeStr.Format(_T("%08X"), sectionHeaderOffset);
+	makeItemToCtrl(m_sectionHeadersCtrl, 1, 3, rawSizeStr);
+	sectionHeaderOffset += sizeof(tmpSection.SizeOfRawData);
+	CString rawAddressStr;
+	rawAddressStr.Format(_T("%08X"), sectionHeaderOffset);
+	makeItemToCtrl(m_sectionHeadersCtrl, 1, 4, rawAddressStr);
+	sectionHeaderOffset += sizeof(tmpSection.PointerToRawData);
+	CString relocAddressStr;
+	relocAddressStr.Format(_T("%08X"), sectionHeaderOffset);
+	makeItemToCtrl(m_sectionHeadersCtrl, 1, 5, relocAddressStr);
+	sectionHeaderOffset += sizeof(tmpSection.PointerToRelocations);
+	CString lineNumbersStr;
+	lineNumbersStr.Format(_T("%08X"), sectionHeaderOffset);
+	makeItemToCtrl(m_sectionHeadersCtrl, 1, 6, lineNumbersStr);
+	sectionHeaderOffset += sizeof(tmpSection.NumberOfLinenumbers);
+	CString relocationsNumberStr;
+	relocationsNumberStr.Format(_T("%08X"), sectionHeaderOffset);
+	makeItemToCtrl(m_sectionHeadersCtrl, 1, 7, relocationsNumberStr);
+	sectionHeaderOffset += sizeof(tmpSection.NumberOfRelocations);
+	CString lineNumberNumbersStr;
+	lineNumberNumbersStr.Format(_T("%08X"), sectionHeaderOffset);
+	makeItemToCtrl(m_sectionHeadersCtrl, 1, 8, lineNumberNumbersStr);
+	sectionHeaderOffset += sizeof(tmpSection.NumberOfLinenumbers);
+	CString characteristicsStr;
+	characteristicsStr.Format(_T("%08X"), sectionHeaderOffset);
+	makeItemToCtrl(m_sectionHeadersCtrl, 1, 9, characteristicsStr);
+}
 void CPeDialog::dynamicCalcItemSize(int width, int height)
 {
-	int itemHeight = height - 6;
+	int itemHeight = height - 7;
 	CRect treeRect;
 	CWnd* tree = GetDlgItem(IDC_TREE_HEADERS);
 	if (tree) {
@@ -69,8 +127,9 @@ void CPeDialog::dynamicCalcItemSize(int width, int height)
 		}
 		CWnd* mainDown = GetDlgItem(IDC_MAIN_DOWN);
 		if (mainDown) {
+			int downHeight = height - tmpRect.Height() - 9;
 			mainDown->GetWindowRect(&tmpRect);
-			m_gridCtrlDown.SetWindowPos(NULL, 0, 0, width - treeRect.Width() - 7, tmpRect.Height(), SWP_NOZORDER | SWP_NOMOVE);
+			m_gridCtrlDown.SetWindowPos(NULL, 0, 0, width - treeRect.Width() - 7, downHeight, SWP_NOZORDER | SWP_NOMOVE);
 		}
 		m_dosHeaderCtrl.SetWindowPos(NULL, 0, 0, width - treeRect.Width() - 7, itemHeight, SWP_NOZORDER | SWP_NOMOVE);
 		m_ntHeadersCtrl.SetWindowPos(NULL, 0, 0, width - treeRect.Width() - 7, itemHeight, SWP_NOZORDER | SWP_NOMOVE);
@@ -422,6 +481,7 @@ void CPeDialog::parsePe()
 		int ntOffset = parseDosHeader();
 		int sectionSize = 0;
 		parseNtHeader(ntOffset, sectionSize);
+		sectionHeaderOffset = ntOffset;
 		parseSection(ntOffset, sectionSize);
 	}else if(result == 0){
 		MessageBox(_T("非PE格式文件，无法解析"), _T("消息框"), MB_OK);

@@ -6,7 +6,7 @@
 #include "ShowCheckboxList.h"
 #include <vector>
 // CPeDialog ¶Ô»°¿ò
-
+void makeItemToCtrl(CGridCtrl &gridCtrl, int row, int col, CString content);
 class CPeDialog : public CDialogEx
 {
 	DECLARE_DYNAMIC(CPeDialog)
@@ -53,6 +53,7 @@ public:
 	afx_msg void OnTvnSelchangedTreeHeaders(NMHDR *pNMHDR, LRESULT *pResult);
 	afx_msg void OnCharacteristicsClick(NMHDR *pNotifyStruct, LRESULT* pResult);
 	afx_msg void OnSubsystemClick(NMHDR *pNotifyStruct, LRESULT* pResult);
+	afx_msg void OnSectionCtrlClick(NMHDR *pNotifyStruct, LRESULT* pResult);
 	CGridCtrl m_dosHeaderCtrl;
 	CGridCtrl m_ntHeadersCtrl;
 	CGridCtrl m_fileHeaderCtrl;
