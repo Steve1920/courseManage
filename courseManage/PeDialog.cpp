@@ -220,6 +220,7 @@ void CPeDialog::GridCtrlInit_up()
 	m_gridCtrl.SetFixedColumnCount(1); //固定列为一列
 	makeItemToCtrl(m_gridCtrl, 0, 0, _T("Property"));
 	makeItemToCtrl(m_gridCtrl, 1, 0, _T("File Name"));
+	makeItemToCtrl(m_gridCtrl, 1, 1, m_exeFullPath);
 	makeItemToCtrl(m_gridCtrl, 2, 0, _T("File Info"));
 	makeItemToCtrl(m_gridCtrl, 3, 0, _T("File Size"));
 	makeItemToCtrl(m_gridCtrl, 4, 0, _T("PE Size"));
@@ -234,7 +235,7 @@ void CPeDialog::GridCtrlInit_up()
 		{
 			m_gridCtrl.SetRowHeight(row, 25); //设置各行高          
 			if (col == 1) {
-				m_gridCtrl.SetColumnWidth(col, 300); //设置各列宽
+				m_gridCtrl.SetColumnWidth(col, 350); //设置各列宽
 			}
 			else {
 				m_gridCtrl.SetColumnWidth(col, 100); //设置各列宽
@@ -243,6 +244,35 @@ void CPeDialog::GridCtrlInit_up()
 	}
 }
 
+BOOL CPeDialog::queryFileProperty(CString & queryStr,DWORD fileVersionSize, char * lpData, LPVOID *lplpBuffer)
+{
+	BOOL queryRst = GetFileVersionInfo(
+		m_exeFullPath,
+		0,
+		fileVersionSize,
+		lpData
+	);
+	if (queryRst) {
+		UINT tmpSize = 0;
+		struct LANGANDCODEPAGE {
+			WORD wLanguage;
+			WORD wCodePage;
+		} *lpTranslate;
+		queryRst = VerQueryValue(lpData,
+			_T("\\VarFileInfo\\Translation"),
+			(LPVOID*)&lpTranslate,
+			&tmpSize);
+		if (queryRst) {
+			CString cs;
+			cs.Format(queryStr, lpTranslate[0].wLanguage, lpTranslate[0].wCodePage);
+			queryRst = VerQueryValue(lpData,
+				cs,
+				lplpBuffer,
+				&tmpSize);
+		}
+	}
+	return queryRst;
+}
 void CPeDialog::GridCtrlInit_down()
 {
 	m_gridCtrlDown.SetEditable(true);
@@ -273,45 +303,20 @@ void CPeDialog::GridCtrlInit_down()
 	}
 	DWORD fileVersionSize = GetFileVersionInfoSize(m_exeFullPath, NULL);
 	if (fileVersionSize) {
+		BOOL queryRst = false;
 		char *lpData = new char[fileVersionSize + 1];
-		BOOL queryRst = GetFileVersionInfo(
-			m_exeFullPath,
-			0,
-			fileVersionSize,
-			lpData
-		);
+		LPVOID  *lplpBuffer = (LPVOID*)new char[200];
+		CString queryStr = _T("\\StringFileInfo\\%04x%04x\\CompanyName");
+		queryRst = queryFileProperty(queryStr, fileVersionSize, lpData,(LPVOID*)&lplpBuffer);
+		CString companyName = (LPCTSTR)lplpBuffer;
 		if (queryRst) {
-			LPVOID  *lplpBuffer = (LPVOID*)new char[200];
-			memset(lplpBuffer, 0, 200);
-			UINT tmpSize = 0;
-			struct LANGANDCODEPAGE {
-				WORD wLanguage;
-				WORD wCodePage;
-			} *lpTranslate;
-			queryRst = VerQueryValue(lpData,
-				_T("\\VarFileInfo\\Translation"),
-				(LPVOID*)&lpTranslate,
-				&tmpSize);
-			CString cs;
-			cs.Format(_T("\\StringFileInfo\\%04x%04x\\CompanyName"), lpTranslate[0].wLanguage, lpTranslate[0].wCodePage);
-			queryRst = VerQueryValue(lpData,
-				cs,
-				(LPVOID*)&lplpBuffer,
-				&tmpSize);
-			CString companyName = (LPCTSTR)lplpBuffer;
-			if (queryRst) {
-				makeItemToCtrl(m_gridCtrlDown,1,1, companyName);
-			}
-			memset(lplpBuffer, 0, 200);
-			cs.Format(_T("\\StringFileInfo\\%04x%04x\\FileDescription"), lpTranslate[0].wLanguage, lpTranslate[0].wCodePage);
-			queryRst = VerQueryValue(lpData,
-				cs,
-				(LPVOID*)&lplpBuffer,
-				&tmpSize);
-			CString FileDescription = (LPCTSTR)lplpBuffer;
-			if (queryRst) {
-				makeItemToCtrl(m_gridCtrlDown, 2, 1, FileDescription);
-			}
+			makeItemToCtrl(m_gridCtrlDown, 1, 1, companyName);
+		}
+		queryStr = _T("\\StringFileInfo\\%04x%04x\\FileVersion");
+		queryRst = queryFileProperty(queryStr, fileVersionSize, lpData, (LPVOID*)&lplpBuffer);
+		CString FileVersion = (LPCTSTR)lplpBuffer;
+		if (queryRst) {
+			makeItemToCtrl(m_gridCtrlDown, 3, 1, FileVersion);
 		}
 		delete[] lpData;
 	}
@@ -1629,3 +1634,4 @@ void CPeDialog::OnGetMinMaxInfo(MINMAXINFO* lpMMI)
 	lpMMI->ptMinTrackSize.y = 522;   //y高度 
 	CDialogEx::OnGetMinMaxInfo(lpMMI);
 }
+

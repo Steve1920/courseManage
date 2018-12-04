@@ -75,4 +75,5 @@ public:
 	void dynamicCalcItemSize(int width, int height);
 	afx_msg void OnSize(UINT nType, int cx, int cy);
 	afx_msg void OnGetMinMaxInfo(MINMAXINFO* lpMMI);
+	BOOL queryFileProperty(CString &queryStr, DWORD fileVersionSize,char *lpData, LPVOID  *lplpBuffer);
 };
