@@ -305,18 +305,51 @@ void CPeDialog::GridCtrlInit_down()
 	if (fileVersionSize) {
 		BOOL queryRst = false;
 		char *lpData = new char[fileVersionSize + 1];
+		//block use
 		LPVOID  *lplpBuffer = (LPVOID*)new char[200];
 		CString queryStr = _T("\\StringFileInfo\\%04x%04x\\CompanyName");
 		queryRst = queryFileProperty(queryStr, fileVersionSize, lpData,(LPVOID*)&lplpBuffer);
-		CString companyName = (LPCTSTR)lplpBuffer;
+		CString showStr = (LPCTSTR)lplpBuffer;
 		if (queryRst) {
-			makeItemToCtrl(m_gridCtrlDown, 1, 1, companyName);
+			makeItemToCtrl(m_gridCtrlDown, 1, 1, showStr);
 		}
+		queryStr = _T("\\StringFileInfo\\%04x%04x\\FileDescription");
+		queryRst = queryFileProperty(queryStr, fileVersionSize, lpData, (LPVOID*)&lplpBuffer);
+		showStr = (LPCTSTR)lplpBuffer;
+		if (showStr.IsEmpty()) {
+			CString fileName = m_exeFullPath.Mid(m_exeFullPath.ReverseFind('/') + 1);
+			showStr = fileName.Mid(0, fileName.ReverseFind('.'));
+		}
+		makeItemToCtrl(m_gridCtrlDown, 2, 1, showStr);
 		queryStr = _T("\\StringFileInfo\\%04x%04x\\FileVersion");
 		queryRst = queryFileProperty(queryStr, fileVersionSize, lpData, (LPVOID*)&lplpBuffer);
-		CString FileVersion = (LPCTSTR)lplpBuffer;
+		showStr = (LPCTSTR)lplpBuffer;
 		if (queryRst) {
-			makeItemToCtrl(m_gridCtrlDown, 3, 1, FileVersion);
+			makeItemToCtrl(m_gridCtrlDown, 3, 1, showStr);
+		}
+		queryStr = _T("\\StringFileInfo\\%04x%04x\\InternalName");
+		queryRst = queryFileProperty(queryStr, fileVersionSize, lpData, (LPVOID*)&lplpBuffer);
+		showStr = (LPCTSTR)lplpBuffer;
+		if (queryRst) {
+			makeItemToCtrl(m_gridCtrlDown, 4, 1, showStr);
+		}
+		queryStr = _T("\\StringFileInfo\\%04x%04x\\LegalCopyright");
+		queryRst = queryFileProperty(queryStr, fileVersionSize, lpData, (LPVOID*)&lplpBuffer);
+		showStr = (LPCTSTR)lplpBuffer;
+		if (queryRst) {
+			makeItemToCtrl(m_gridCtrlDown, 5, 1, showStr);
+		}
+		queryStr = _T("\\StringFileInfo\\%04x%04x\\OriginalFilename");
+		queryRst = queryFileProperty(queryStr, fileVersionSize, lpData, (LPVOID*)&lplpBuffer);
+		showStr = (LPCTSTR)lplpBuffer;
+		if (queryRst) {
+			makeItemToCtrl(m_gridCtrlDown, 6, 1, showStr);
+		}
+		queryStr = _T("\\StringFileInfo\\%04x%04x\\ProductName");
+		queryRst = queryFileProperty(queryStr, fileVersionSize, lpData, (LPVOID*)&lplpBuffer);
+		showStr = (LPCTSTR)lplpBuffer;
+		if (queryRst) {
+			makeItemToCtrl(m_gridCtrlDown, 7, 1, showStr);
 		}
 		delete[] lpData;
 	}
