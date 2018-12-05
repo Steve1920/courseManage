@@ -242,6 +242,14 @@ void CPeDialog::GridCtrlInit_up()
 			}
 		}
 	}
+	CFileStatus fStatus;
+	CFile::GetStatus(m_exeFullPath, fStatus);
+	CString createTimeStr = fStatus.m_ctime.Format("%Y-%m-%d %H:%M:%S");
+	CString lmTimeStr = fStatus.m_mtime.Format("%Y-%m-%d %H:%M:%S");
+	CString laTimeStr = fStatus.m_atime.Format("%Y-%m-%d %H:%M:%S");
+	makeItemToCtrl(m_gridCtrl, 5, 1, createTimeStr);
+	makeItemToCtrl(m_gridCtrl, 6, 1, lmTimeStr);
+	makeItemToCtrl(m_gridCtrl, 7, 1, laTimeStr);
 }
 
 BOOL CPeDialog::queryFileProperty(CString & queryStr,DWORD fileVersionSize, char * lpData, LPVOID *lplpBuffer)
