@@ -105,6 +105,12 @@
     <ClInclude Include="ShowCheckboxList.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="md5c.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="SHA1.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="courseManage.cpp">
@@ -171,6 +177,12 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="ShowCheckboxList.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="md5c.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="SHA1.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>

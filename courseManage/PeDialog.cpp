@@ -5,8 +5,8 @@
 #include "courseManage.h"
 #include "PeDialog.h"
 #include "afxdialogex.h"
-
-
+#include "md5c.h"
+#include "SHA1.h"
 // CPeDialog ¶Ô»°¿ò
 
 IMPLEMENT_DYNAMIC(CPeDialog, CDialogEx)
@@ -206,10 +206,12 @@ void makeItemToCtrl(CGridCtrl &gridCtrl,int row,int col,CString content) {
 	item.mask = GVIF_TEXT | GVIF_FORMAT;
 	item.row = row;
 	item.col = col;
-	item.nFormat = DT_CENTER | DT_WORDBREAK | DT_VCENTER;
+	item.nFormat = DT_LEFT | DT_WORDBREAK | DT_VCENTER;
 	item.strText.Format(content, 0);
 	gridCtrl.SetItem(&item);
 }
+
+
 void CPeDialog::GridCtrlInit_up()
 {
 	m_gridCtrl.SetEditable(false);
@@ -221,7 +223,7 @@ void CPeDialog::GridCtrlInit_up()
 	makeItemToCtrl(m_gridCtrl, 0, 0, _T("Property"));
 	makeItemToCtrl(m_gridCtrl, 1, 0, _T("File Name"));
 	makeItemToCtrl(m_gridCtrl, 1, 1, m_exeFullPath);
-	makeItemToCtrl(m_gridCtrl, 2, 0, _T("File Info"));
+	makeItemToCtrl(m_gridCtrl, 2, 0, _T("File Type"));
 	makeItemToCtrl(m_gridCtrl, 3, 0, _T("File Size"));
 	makeItemToCtrl(m_gridCtrl, 4, 0, _T("PE Size"));
 	makeItemToCtrl(m_gridCtrl, 5, 0, _T("Created"));
@@ -244,12 +246,38 @@ void CPeDialog::GridCtrlInit_up()
 	}
 	CFileStatus fStatus;
 	CFile::GetStatus(m_exeFullPath, fStatus);
+	CString fileSizeStr;
+	fileSizeStr.Format(_T("%d(Bytes)"), fStatus.m_size);
+	makeItemToCtrl(m_gridCtrl, 3, 1, fileSizeStr);
 	CString createTimeStr = fStatus.m_ctime.Format("%Y-%m-%d %H:%M:%S");
 	CString lmTimeStr = fStatus.m_mtime.Format("%Y-%m-%d %H:%M:%S");
 	CString laTimeStr = fStatus.m_atime.Format("%Y-%m-%d %H:%M:%S");
 	makeItemToCtrl(m_gridCtrl, 5, 1, createTimeStr);
 	makeItemToCtrl(m_gridCtrl, 6, 1, lmTimeStr);
 	makeItemToCtrl(m_gridCtrl, 7, 1, laTimeStr);
+	unsigned char digest[16];
+	unsigned char digestS[20];
+	char *c_path = new char[m_exeFullPath.GetLength() + 1];
+	memset(c_path, 0, m_exeFullPath.GetLength() + 1);
+	memset(digest, 0, 16);
+	memset(digestS, 0, 20);
+	int len = WideCharToMultiByte(CP_ACP, 0, m_exeFullPath, m_exeFullPath.GetLength(), NULL, 0, NULL, NULL);
+	WideCharToMultiByte(CP_ACP, 0, m_exeFullPath, m_exeFullPath.GetLength(), c_path, len, NULL, NULL);
+	MD5File(c_path, digest);
+	CString md5Str;
+	md5Str.Format(_T("%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X"),
+		digest[0], digest[1], digest[2], digest[3], digest[4], digest[5], digest[6], 
+		digest[7], digest[8], digest[9], digest[10], digest[11], digest[12], digest[13], 
+		digest[14], digest[15]);
+	makeItemToCtrl(m_gridCtrl, 8, 1, md5Str);
+	SHA1File(c_path, digestS);
+	CString shaStr;
+	shaStr.Format(_T("%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X"),
+		digestS[0], digestS[1], digestS[2], digestS[3], digestS[4], digestS[5], digestS[6],
+		digestS[7], digestS[8], digestS[9], digestS[10], digestS[11], digestS[12], digestS[13],
+		digestS[14], digestS[15], digestS[16], digestS[17], digestS[18], digestS[19]);
+	makeItemToCtrl(m_gridCtrl, 9, 1, shaStr);
+	delete[] c_path;
 }
 
 BOOL CPeDialog::queryFileProperty(CString & queryStr,DWORD fileVersionSize, char * lpData, LPVOID *lplpBuffer)
@@ -315,49 +343,31 @@ void CPeDialog::GridCtrlInit_down()
 		char *lpData = new char[fileVersionSize + 1];
 		//block use
 		LPVOID  *lplpBuffer = (LPVOID*)new char[200];
-		CString queryStr = _T("\\StringFileInfo\\%04x%04x\\CompanyName");
-		queryRst = queryFileProperty(queryStr, fileVersionSize, lpData,(LPVOID*)&lplpBuffer);
-		CString showStr = (LPCTSTR)lplpBuffer;
-		if (queryRst) {
-			makeItemToCtrl(m_gridCtrlDown, 1, 1, showStr);
-		}
-		queryStr = _T("\\StringFileInfo\\%04x%04x\\FileDescription");
-		queryRst = queryFileProperty(queryStr, fileVersionSize, lpData, (LPVOID*)&lplpBuffer);
-		showStr = (LPCTSTR)lplpBuffer;
-		if (showStr.IsEmpty()) {
-			CString fileName = m_exeFullPath.Mid(m_exeFullPath.ReverseFind('/') + 1);
-			showStr = fileName.Mid(0, fileName.ReverseFind('.'));
-		}
-		makeItemToCtrl(m_gridCtrlDown, 2, 1, showStr);
-		queryStr = _T("\\StringFileInfo\\%04x%04x\\FileVersion");
-		queryRst = queryFileProperty(queryStr, fileVersionSize, lpData, (LPVOID*)&lplpBuffer);
-		showStr = (LPCTSTR)lplpBuffer;
-		if (queryRst) {
-			makeItemToCtrl(m_gridCtrlDown, 3, 1, showStr);
-		}
-		queryStr = _T("\\StringFileInfo\\%04x%04x\\InternalName");
-		queryRst = queryFileProperty(queryStr, fileVersionSize, lpData, (LPVOID*)&lplpBuffer);
-		showStr = (LPCTSTR)lplpBuffer;
-		if (queryRst) {
-			makeItemToCtrl(m_gridCtrlDown, 4, 1, showStr);
-		}
-		queryStr = _T("\\StringFileInfo\\%04x%04x\\LegalCopyright");
-		queryRst = queryFileProperty(queryStr, fileVersionSize, lpData, (LPVOID*)&lplpBuffer);
-		showStr = (LPCTSTR)lplpBuffer;
-		if (queryRst) {
-			makeItemToCtrl(m_gridCtrlDown, 5, 1, showStr);
-		}
-		queryStr = _T("\\StringFileInfo\\%04x%04x\\OriginalFilename");
-		queryRst = queryFileProperty(queryStr, fileVersionSize, lpData, (LPVOID*)&lplpBuffer);
-		showStr = (LPCTSTR)lplpBuffer;
-		if (queryRst) {
-			makeItemToCtrl(m_gridCtrlDown, 6, 1, showStr);
-		}
-		queryStr = _T("\\StringFileInfo\\%04x%04x\\ProductName");
-		queryRst = queryFileProperty(queryStr, fileVersionSize, lpData, (LPVOID*)&lplpBuffer);
-		showStr = (LPCTSTR)lplpBuffer;
-		if (queryRst) {
-			makeItemToCtrl(m_gridCtrlDown, 7, 1, showStr);
+		CString queryStrAry[7] = {
+			_T("\\StringFileInfo\\%04x%04x\\CompanyName"),
+			_T("\\StringFileInfo\\%04x%04x\\FileDescription"),
+			_T("\\StringFileInfo\\%04x%04x\\FileVersion"),
+			_T("\\StringFileInfo\\%04x%04x\\InternalName"),
+			_T("\\StringFileInfo\\%04x%04x\\LegalCopyright"),
+			_T("\\StringFileInfo\\%04x%04x\\OriginalFilename"),
+			_T("\\StringFileInfo\\%04x%04x\\ProductName")
+		};
+		for (int i = 0; i < 7; i++)
+		{
+			queryRst = queryFileProperty(queryStrAry[i], fileVersionSize, lpData, (LPVOID*)&lplpBuffer);
+			CString showStr = (LPCTSTR)lplpBuffer;
+			if (i == 1) {
+				if (showStr.IsEmpty()) {
+					CString fileName = m_exeFullPath.Mid(m_exeFullPath.ReverseFind('/') + 1);
+					showStr = fileName.Mid(0, fileName.ReverseFind('.'));
+				}
+				makeItemToCtrl(m_gridCtrlDown, 2, 1, showStr);
+			}
+			else {
+				if (queryRst) {
+					makeItemToCtrl(m_gridCtrlDown, i + 1, 1, showStr);
+				}
+			}
 		}
 		delete[] lpData;
 	}
@@ -1080,6 +1090,11 @@ void CPeDialog::parseSection(int & ntOffset, int & sectionSize)
 			{
 				createSectionHeaderLine(tmpRow, m_sectionAry[i], m_sectionHeadersCtrl);
 				tmpRow++;
+				if (i == sectionSize - 1) {
+					CString peSize;
+					peSize.Format(_T("%d(Bytes)"), m_sectionAry[i].SizeOfRawData + m_sectionAry[i].PointerToRawData);
+					makeItemToCtrl(m_gridCtrl, 4, 1, peSize);
+				}
 			}
 		}
 		file.Close();
@@ -1206,12 +1221,14 @@ void CPeDialog::parseNtHeader(int &ntOffset,int &sectionSize)
 			file.Read(&image64, fileHeader.SizeOfOptionalHeader);
 			parseOptionalHeader64(offsetTmp, image64);
 			offsetTmp += sizeof(image64);
+			makeItemToCtrl(m_gridCtrl, 2, 1, _T("Portable Executable 64"));
 		}
 		else {
 			IMAGE_OPTIONAL_HEADER32 image32;
 			file.Read(&image32, fileHeader.SizeOfOptionalHeader);
 			parseOptionalHeader32(offsetTmp, image32);
 			offsetTmp += sizeof(image32);
+			makeItemToCtrl(m_gridCtrl, 2, 1, _T("Portable Executable 32"));
 		}
 		ntOffset = offsetTmp;
 		file.Close();

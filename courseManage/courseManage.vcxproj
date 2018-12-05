@@ -75,6 +75,8 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
+    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
+    <LibraryPath>$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86);$(NETFXKitsDir)Lib\um\x86;</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
@@ -93,12 +95,12 @@
       <PreprocessorDefinitions>WIN32;_WINDOWS;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>
       </SDLCheck>
-      <AdditionalIncludeDirectories>
-      </AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>E:\openssl-1.0.2l\inc32;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
+      <AdditionalLibraryDirectories>E:\openssl-1.0.2l\out32;E:\openssl-1.0.2l\out32dll;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <Midl>
       <MkTypLibCompatible>false</MkTypLibCompatible>
@@ -206,6 +208,7 @@
     <ClInclude Include="GridCtrl_src\InPlaceEdit.h" />
     <ClInclude Include="GridCtrl_src\MemDC.h" />
     <ClInclude Include="GridCtrl_src\TitleTip.h" />
+    <ClInclude Include="md5c.h" />
     <ClInclude Include="NewCellTypes\GridCellCheck.h" />
     <ClInclude Include="NewCellTypes\GridCellCombo.h" />
     <ClInclude Include="NewCellTypes\GridCellDateTime.h" />
@@ -214,6 +217,7 @@
     <ClInclude Include="PeDialog.h" />
     <ClInclude Include="processInfo.h" />
     <ClInclude Include="Resource.h" />
+    <ClInclude Include="SHA1.h" />
     <ClInclude Include="ShowCheckboxList.h" />
     <ClInclude Include="ShowSelectDlg.h" />
     <ClInclude Include="stdafx.h" />
@@ -233,12 +237,14 @@
     <ClCompile Include="GridCtrl_src\GridDropTarget.cpp" />
     <ClCompile Include="GridCtrl_src\InPlaceEdit.cpp" />
     <ClCompile Include="GridCtrl_src\TitleTip.cpp" />
+    <ClCompile Include="md5c.cpp" />
     <ClCompile Include="NewCellTypes\GridCellCheck.cpp" />
     <ClCompile Include="NewCellTypes\GridCellCombo.cpp" />
     <ClCompile Include="NewCellTypes\GridCellDateTime.cpp" />
     <ClCompile Include="NewCellTypes\GridCellNumeric.cpp" />
     <ClCompile Include="NewCellTypes\GridURLCell.cpp" />
     <ClCompile Include="PeDialog.cpp" />
+    <ClCompile Include="SHA1.cpp" />
     <ClCompile Include="ShowCheckboxList.cpp" />
     <ClCompile Include="ShowSelectDlg.cpp" />
     <ClCompile Include="stdafx.cpp">
