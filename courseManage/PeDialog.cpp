@@ -582,6 +582,10 @@ void CPeDialog::parsePe()
 		parseSection(ntOffset, sectionSize);
 	}else if(result == 0){
 		MessageBox(_T("非PE格式文件，无法解析"), _T("消息框"), MB_OK);
+		CDialog::OnOK();
+	}
+	else {
+		CDialog::OnOK();
 	}
 }
 
@@ -1061,7 +1065,7 @@ void CPeDialog::parseSection(int & ntOffset, int & sectionSize)
 		UINT ret = file.Read(m_sectionAry, sizeof(IMAGE_SECTION_HEADER) * sectionSize);
 		m_sectionHeadersCtrl.SetEditable(true);
 		m_sectionHeadersCtrl.SetTextBkColor(RGB(0xFF, 0xFF, 0xE0));//黄色背景
-		m_sectionHeadersCtrl.SetRowCount(14);
+		m_sectionHeadersCtrl.SetRowCount(sectionSize + 3);
 		m_sectionHeadersCtrl.SetColumnCount(10);
 		m_sectionHeadersCtrl.SetFixedRowCount(3);
 		makeItemToCtrl(m_sectionHeadersCtrl, 0, 0, _T("Name"));

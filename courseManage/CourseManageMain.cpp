@@ -5,6 +5,7 @@
 #include "courseManage.h"
 #include "CourseManageMain.h"
 #include "afxdialogex.h"
+#include "PeDialog.h"
 
 int GetMemoryUsage(uint64_t * mem, DWORD processId)
 {
@@ -110,7 +111,7 @@ BEGIN_MESSAGE_MAP(CCourseManageMain, CDialogEx)
 ON_BN_CLICKED(IDC_BUTTON_KILLPROCESS, &CCourseManageMain::OnBnClickedButtonKillprocess)
 ON_NOTIFY(NM_RCLICK, IDC_COURSE_LIST, &CCourseManageMain::OnNMRClickCourseList)
 ON_COMMAND(ID__KILL_PROCESS, &CCourseManageMain::InMenuKillProcess)
-ON_COMMAND(ID__32782, &CCourseManageMain::InMenuOpenFolder)
+ON_COMMAND(ID__OPEN_FILE_FOLDER, &CCourseManageMain::InMenuOpenFolder)
 ON_COMMAND(ID_32774, &CCourseManageMain::OnRefreshRightNow)
 ON_COMMAND(ID_32771, &CCourseManageMain::OnCreateNewProcess)
 ON_NOTIFY(LVN_COLUMNCLICK, IDC_COURSE_LIST, &CCourseManageMain::OnLvnColumnclickCourseList)
@@ -119,6 +120,8 @@ ON_COMMAND(ID_REFRESH_NORMAL, &CCourseManageMain::OnRefreshNormal)
 ON_COMMAND(ID_REFRESH_LOW, &CCourseManageMain::OnRefreshLow)
 ON_COMMAND(ID_REFRESH_PAUSE, &CCourseManageMain::OnRefreshPause)
 ON_COMMAND(ID_ABOUTBOX, &CCourseManageMain::OnAboutbox)
+ON_BN_CLICKED(IDC_SHOWPEMSG, &CCourseManageMain::OnBnClickedShowpemsg)
+ON_COMMAND(ID_SHOW_PE_DIALOG, &CCourseManageMain::OnShowPeDialog)
 END_MESSAGE_MAP()
 
 BOOL g_exitFlag = false;
@@ -298,11 +301,14 @@ void CCourseManageMain::OnNMRClickCourseList(NMHDR *pNMHDR, LRESULT *pResult)
 	if (selected != -1) {
 		POINT point;
 		HMENU hMenu, hSubMenu;
-		GetCursorPos(&point);
-		hMenu = LoadMenu(NULL, MAKEINTRESOURCE(IDR_MENU_RCLICK));
-		hSubMenu = GetSubMenu(hMenu, 0);
-		SetMenuDefaultItem(hSubMenu, -1, FALSE);
-		SetForegroundWindow();
+		GetCursorPos(&point); //鼠标位置
+		hMenu = LoadMenu(NULL,
+			MAKEINTRESOURCE(IDR_MENU_RCLICK)); // 加载菜单
+		hSubMenu = GetSubMenu(hMenu, 0);//得到子菜单(因为弹出式菜单是子菜单)
+
+		SetMenuDefaultItem(hSubMenu, -1, FALSE);//设置缺省菜单项,-1为无缺省项
+		SetForegroundWindow(); // 激活窗口并置前
+
 		TrackPopupMenu(hSubMenu, 0,
 			point.x, point.y, 0, m_hWnd, NULL);
 	}
@@ -530,4 +536,60 @@ void CCourseManageMain::OnAboutbox()
 {
 	CAboutBox abox;
 	abox.DoModal();
+}
+
+
+void CCourseManageMain::OnBnClickedShowpemsg()
+{
+	// TODO: 在此添加控件通知处理程序代码
+	int selected = m_listCtrl.GetSelectionMark();
+	if (selected != -1) {
+		CString pidStr = m_listCtrl.GetItemText(selected, 1);
+		DWORD processId = _ttol(pidStr);
+		TCHAR str[400] = { 0 };
+		DWORD size = 400;
+		HANDLE hProcess;
+		hProcess = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_QUERY_LIMITED_INFORMATION,
+			0, processId);
+		if (NULL == hProcess)
+			return;
+		if (QueryFullProcessImageName(hProcess, 0, str, &size))
+		{
+			CString exeFullPath(str);
+			CPeDialog peDialog(exeFullPath);
+			peDialog.DoModal();
+		}
+		CloseHandle(hProcess);
+	}
+	else {
+		MessageBox(_T("还未选择进程!"), _T("进程管理系统"), MB_OK);
+	}
+}
+
+
+void CCourseManageMain::OnShowPeDialog()
+{
+	// TODO: 在此添加命令处理程序代码
+	int selected = m_listCtrl.GetSelectionMark();
+	if (selected != -1) {
+		CString pidStr = m_listCtrl.GetItemText(selected, 1);
+		DWORD processId = _ttol(pidStr);
+		TCHAR str[400] = { 0 };
+		DWORD size = 400;
+		HANDLE hProcess;
+		hProcess = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_QUERY_LIMITED_INFORMATION,
+			0, processId);
+		if (NULL == hProcess)
+			return;
+		if (QueryFullProcessImageName(hProcess, 0, str, &size))
+		{
+			CString exeFullPath(str);
+			CPeDialog peDialog(exeFullPath);
+			peDialog.DoModal();
+		}
+		CloseHandle(hProcess);
+	}
+	else {
+		MessageBox(_T("还未选择进程!"), _T("进程管理系统"), MB_OK);
+	}
 }

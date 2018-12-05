@@ -4,9 +4,9 @@
 
 #include "stdafx.h"
 #include "courseManage.h"
-//#include "courseManageDlg.h"
-//#include "CourseManageRegist.h"
-//#include "CourseManageMain.h"
+#include "courseManageDlg.h"
+#include "CourseManageRegist.h"
+#include "CourseManageMain.h"
 #include "PeDialog.h"
 
 #ifdef _DEBUG
@@ -74,16 +74,16 @@ BOOL CcourseManageApp::InitInstance()
 	SetRegistryKey(_T("应用程序向导生成的本地应用程序"));
 
 	/*CcourseManageDlg dlg;
-	CCourseManageRegist regDlg;
-	CCourseManageMain mainDlg;*/
+	CCourseManageRegist regDlg;*/
+	CCourseManageMain mainDlg;
 	//m_pMainWnd = &dlg;
 	//m_pMainWnd = &regDlg;
-	//m_pMainWnd = &mainDlg;
-	//INT_PTR nResponse = mainDlg.DoModal();
-	CString exePath(_T("C:/Users/Administrator/Desktop/courseManage.exe"));
+	m_pMainWnd = &mainDlg;
+	INT_PTR nResponse = mainDlg.DoModal();
+	/*CString exePath(_T("C:/Users/Administrator/Desktop/courseManage.exe"));
 	CPeDialog peDlg(exePath);
 	m_pMainWnd = &peDlg;
-	INT_PTR nResponse = peDlg.DoModal();
+	INT_PTR nResponse = peDlg.DoModal();*/
 	if (nResponse == IDOK)
 	{
 		// TODO: 在此放置处理何时用

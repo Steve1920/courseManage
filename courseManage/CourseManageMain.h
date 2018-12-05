@@ -60,4 +60,6 @@ public:
 	afx_msg void OnRefreshPause();
 	BOOL checkMenuItem(UINT itemId);
 	afx_msg void OnAboutbox();
+	afx_msg void OnBnClickedShowpemsg();
+	afx_msg void OnShowPeDialog();
 };
