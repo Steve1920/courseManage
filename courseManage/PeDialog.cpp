@@ -352,11 +352,12 @@ void CPeDialog::GridCtrlInit_down()
 		};
 		for (int i = 0; i < 7; i++)
 		{
+			memset(lplpBuffer, 0, 200);
 			queryRst = queryFileProperty(queryStrAry[i], fileVersionSize, lpData, (LPVOID*)&lplpBuffer);
 			CString showStr = (LPCTSTR)lplpBuffer;
 			if (i == 1) {
 				if (showStr.IsEmpty()) {
-					CString fileName = m_exeFullPath.Mid(m_exeFullPath.ReverseFind('/') + 1);
+					CString fileName = m_exeFullPath.Mid(m_exeFullPath.ReverseFind('\\') + 1);
 					showStr = fileName.Mid(0, fileName.ReverseFind('.'));
 				}
 				makeItemToCtrl(m_gridCtrlDown, 2, 1, showStr);
