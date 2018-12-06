@@ -856,7 +856,7 @@ void createOptionalHeaderLine64(int row, CString name, int offset, CString &size
 		valueStr.Format(_T("%04X"), value);
 	}
 	else if (row == 9 || (row >= 24 && row <= 27)) {
-		valueStr.Format(_T("%016X"), value);
+		valueStr.Format(_T("%016llX"), value);
 	}
 	else {
 		valueStr.Format(_T("%08X"), value);
