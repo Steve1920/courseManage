@@ -1191,13 +1191,16 @@ void CPeDialog::parseNtHeader(int &ntOffset,int &sectionSize)
 		offsetTmp += sizeof(fileHeader.Characteristics);
 		m_optionalHeaderCtrl.SetEditable(true);
 		m_optionalHeaderCtrl.SetTextBkColor(RGB(0xFF, 0xFF, 0xE0));//»ÆÉ«±³¾°
+		BOOL is64SysFlag;
 		if (fileHeader.Machine == IMAGE_FILE_MACHINE_IA64
 			|| fileHeader.Machine == IMAGE_FILE_MACHINE_ALPHA64
 			|| fileHeader.Machine == IMAGE_FILE_MACHINE_AMD64) {
 			m_optionalHeaderCtrl.SetRowCount(30);
+			is64SysFlag = true;
 		}
 		else {
 			m_optionalHeaderCtrl.SetRowCount(31);
+			is64SysFlag = false;
 		}
 		m_optionalHeaderCtrl.SetColumnCount(5);
 		m_optionalHeaderCtrl.SetFixedRowCount(1);
@@ -1221,6 +1224,9 @@ void CPeDialog::parseNtHeader(int &ntOffset,int &sectionSize)
 					m_optionalHeaderCtrl.SetItemState(row, col, m_optionalHeaderCtrl.GetItemState(row, col) | GVIS_READONLY);
 				}
 			}
+		}
+		if (is64SysFlag) {
+			m_optionalHeaderCtrl.SetColumnWidth(3, 120);
 		}
 		m_optionalHeaderCtrl.SetItemBkColour(1, 3, RGB(174, 197, 232));
 		m_optionalHeaderCtrl.SetItemBkColour(1, 4, RGB(174, 197, 232));
