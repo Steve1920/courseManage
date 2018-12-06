@@ -257,11 +257,12 @@ void CPeDialog::GridCtrlInit_up()
 	makeItemToCtrl(m_gridCtrl, 7, 1, laTimeStr);
 	unsigned char digest[16];
 	unsigned char digestS[20];
-	char *c_path = NULL;
-	USES_CONVERSION;
-	c_path = T2A(m_exeFullPath);
+	char *c_path = new char[m_exeFullPath.GetLength() + 1];
+	memset(c_path, 0, m_exeFullPath.GetLength() + 1);
 	memset(digest, 0, 16);
 	memset(digestS, 0, 20);
+	int len = WideCharToMultiByte(CP_ACP, 0, m_exeFullPath, m_exeFullPath.GetLength(), NULL, 0, NULL, NULL);
+	WideCharToMultiByte(CP_ACP, 0, m_exeFullPath, m_exeFullPath.GetLength(), c_path, len, NULL, NULL);
 	MD5File(c_path, digest);
 	CString md5Str;
 	md5Str.Format(_T("%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X"),
@@ -276,6 +277,7 @@ void CPeDialog::GridCtrlInit_up()
 		digestS[7], digestS[8], digestS[9], digestS[10], digestS[11], digestS[12], digestS[13],
 		digestS[14], digestS[15], digestS[16], digestS[17], digestS[18], digestS[19]);
 	makeItemToCtrl(m_gridCtrl, 9, 1, shaStr);
+	delete[] c_path;
 }
 
 BOOL CPeDialog::queryFileProperty(CString & queryStr,DWORD fileVersionSize, char * lpData, LPVOID *lplpBuffer)
@@ -444,8 +446,7 @@ void CPeDialog::OnSubsystemClick(NMHDR * pNotifyStruct, LRESULT * pResult)
 	NMHDR hdr =  pItem->hdr;
 	int row = pItem->iRow;
 	int column = pItem->iColumn;
-	CString subSysStr =  m_optionalHeaderCtrl.GetItemText(row, 0);
-	if (subSysStr == _T("Subsystem") && column == 4) {
+	if (row == 23 && column == 4) {
 		int selIndex = 0;
 		CString *ary = new CString[13];
 		CString str_0 = _T("Unknown subsystem");
@@ -474,7 +475,7 @@ void CPeDialog::OnSubsystemClick(NMHDR * pNotifyStruct, LRESULT * pResult)
 		ary[11] = str_11;
 		CString str_12 = _T("Windows Boot Application");
 		ary[12] = str_12;
-		CString value = m_optionalHeaderCtrl.GetItemText(row, 3);
+		CString value = m_optionalHeaderCtrl.GetItemText(23, 3);
 		value = _T("0x") + value;
 		int valInt = 0;
 		StrToIntEx(value, STIF_SUPPORT_HEX, &valInt);
@@ -526,8 +527,8 @@ void CPeDialog::OnSubsystemClick(NMHDR * pNotifyStruct, LRESULT * pResult)
 		CShowSelectDlg subSysDlg(ary,13, selIndex, _T("Subsystem"));
 		subSysDlg.DoModal();
 	}
-	if (subSysStr == _T("DllCharacteristics") && column == 4) {
-		CString value = m_optionalHeaderCtrl.GetItemText(row, 3);
+	if (row == 24 && column == 4) {
+		CString value = m_optionalHeaderCtrl.GetItemText(24, 3);
 		value = _T("0x") + value;
 		int valInt = 0;
 		StrToIntEx(value, STIF_SUPPORT_HEX, &valInt);
@@ -853,9 +854,6 @@ void createOptionalHeaderLine64(int row, CString name, int offset, CString &size
 	}
 	else if (row == 1 || (row >= 13 && row <= 18)) {
 		valueStr.Format(_T("%04X"), value);
-	}
-	else if (row == 9 || (row >= 24 && row <= 27)) {
-		valueStr.Format(_T("%016X"), value);
 	}
 	else {
 		valueStr.Format(_T("%08X"), value);
@@ -1190,14 +1188,7 @@ void CPeDialog::parseNtHeader(int &ntOffset,int &sectionSize)
 		offsetTmp += sizeof(fileHeader.Characteristics);
 		m_optionalHeaderCtrl.SetEditable(true);
 		m_optionalHeaderCtrl.SetTextBkColor(RGB(0xFF, 0xFF, 0xE0));//黄色背景
-		if (fileHeader.Machine == IMAGE_FILE_MACHINE_IA64
-			|| fileHeader.Machine == IMAGE_FILE_MACHINE_ALPHA64
-			|| fileHeader.Machine == IMAGE_FILE_MACHINE_AMD64) {
-			m_optionalHeaderCtrl.SetRowCount(30);
-		}
-		else {
-			m_optionalHeaderCtrl.SetRowCount(31);
-		}
+		m_optionalHeaderCtrl.SetRowCount(31);
 		m_optionalHeaderCtrl.SetColumnCount(5);
 		m_optionalHeaderCtrl.SetFixedRowCount(1);
 		m_optionalHeaderCtrl.SetFixedColumnCount(3);
@@ -1223,13 +1214,13 @@ void CPeDialog::parseNtHeader(int &ntOffset,int &sectionSize)
 		}
 		m_optionalHeaderCtrl.SetItemBkColour(1, 3, RGB(174, 197, 232));
 		m_optionalHeaderCtrl.SetItemBkColour(1, 4, RGB(174, 197, 232));
+		m_optionalHeaderCtrl.SetItemBkColour(23, 3, RGB(174, 197, 232));
+		m_optionalHeaderCtrl.SetItemBkColour(23, 4, RGB(174, 197, 232));
+		m_optionalHeaderCtrl.SetItemBkColour(24, 3, RGB(174, 197, 232));
+		m_optionalHeaderCtrl.SetItemBkColour(24, 4, RGB(174, 197, 232));
 		if (fileHeader.Machine == IMAGE_FILE_MACHINE_IA64
 			|| fileHeader.Machine == IMAGE_FILE_MACHINE_ALPHA64
 			|| fileHeader.Machine == IMAGE_FILE_MACHINE_AMD64) {
-			m_optionalHeaderCtrl.SetItemBkColour(22, 3, RGB(174, 197, 232));
-			m_optionalHeaderCtrl.SetItemBkColour(22, 4, RGB(174, 197, 232));
-			m_optionalHeaderCtrl.SetItemBkColour(23, 3, RGB(174, 197, 232));
-			m_optionalHeaderCtrl.SetItemBkColour(23, 4, RGB(174, 197, 232));
 			IMAGE_OPTIONAL_HEADER64 image64;
 			file.Read(&image64, fileHeader.SizeOfOptionalHeader);
 			parseOptionalHeader64(offsetTmp, image64);
@@ -1237,10 +1228,6 @@ void CPeDialog::parseNtHeader(int &ntOffset,int &sectionSize)
 			makeItemToCtrl(m_gridCtrl, 2, 1, _T("Portable Executable 64"));
 		}
 		else {
-			m_optionalHeaderCtrl.SetItemBkColour(23, 3, RGB(174, 197, 232));
-			m_optionalHeaderCtrl.SetItemBkColour(23, 4, RGB(174, 197, 232));
-			m_optionalHeaderCtrl.SetItemBkColour(24, 3, RGB(174, 197, 232));
-			m_optionalHeaderCtrl.SetItemBkColour(24, 4, RGB(174, 197, 232));
 			IMAGE_OPTIONAL_HEADER32 image32;
 			file.Read(&image32, fileHeader.SizeOfOptionalHeader);
 			parseOptionalHeader32(offsetTmp, image32);
@@ -1511,7 +1498,7 @@ void CPeDialog::parseOptionalHeader32(int offset, IMAGE_OPTIONAL_HEADER32 & imag
 
 void CPeDialog::parseOptionalHeader64(int offset, IMAGE_OPTIONAL_HEADER64 & image64)
 {
-	CString sizeStrAry[8] = { _T("Byte"),_T("Word"),_T("") ,_T("Dword"),_T(""),_T(""),_T(""),_T("Qword") };
+	CString sizeStrAry[8] = { _T("Byte"),_T("Word"),_T("") ,_T("Dword"),_T(""),_T(""),_T(""),_T("DWORD64") };
 	createOptionalHeaderLine(1, _T("Magic"), offset, sizeStrAry[sizeof(image64.Magic) - 1], image64.Magic, m_optionalHeaderCtrl);
 	offset += sizeof(image64.Magic);
 	createOptionalHeaderLine(2, _T("MajorLinkerVersion"), offset, sizeStrAry[sizeof(image64.MajorLinkerVersion) - 1], image64.MajorLinkerVersion, m_optionalHeaderCtrl);
@@ -1570,34 +1557,6 @@ void CPeDialog::parseOptionalHeader64(int offset, IMAGE_OPTIONAL_HEADER64 & imag
 	offset += sizeof(image64.LoaderFlags);
 	createOptionalHeaderLine(29, _T("NumberOfRvaAndSizes"), offset, sizeStrAry[sizeof(image64.NumberOfRvaAndSizes) - 1], image64.NumberOfRvaAndSizes, m_optionalHeaderCtrl);
 	offset += sizeof(image64.NumberOfRvaAndSizes);
-	m_dataDirectoriesCtrl.SetEditable(true);
-	m_dataDirectoriesCtrl.SetTextBkColor(RGB(0xFF, 0xFF, 0xE0));//黄色背景
-	m_dataDirectoriesCtrl.SetRowCount(30);
-	m_dataDirectoriesCtrl.SetColumnCount(5);
-	m_dataDirectoriesCtrl.SetFixedRowCount(1);
-	m_dataDirectoriesCtrl.SetFixedColumnCount(3);
-	makeItemToCtrl(m_dataDirectoriesCtrl, 0, 0, _T("Member"));
-	makeItemToCtrl(m_dataDirectoriesCtrl, 0, 1, _T("Offset"));
-	makeItemToCtrl(m_dataDirectoriesCtrl, 0, 2, _T("Size"));
-	makeItemToCtrl(m_dataDirectoriesCtrl, 0, 3, _T("Value"));
-	makeItemToCtrl(m_dataDirectoriesCtrl, 0, 4, _T("Section"));
-	for (int row = 0; row < m_dataDirectoriesCtrl.GetRowCount(); row++) {
-		for (int col = 0; col < m_dataDirectoriesCtrl.GetColumnCount(); col++)
-		{
-			m_dataDirectoriesCtrl.SetRowHeight(row, 25); //设置各行高         
-			if (col == 0) {
-				m_dataDirectoriesCtrl.SetColumnWidth(col, 300); //设置各列宽
-			}
-			else {
-				m_dataDirectoriesCtrl.SetColumnWidth(col, 100); //设置各列宽
-			}
-			if (col == m_dataDirectoriesCtrl.GetColumnCount() - 1) {
-				m_dataDirectoriesCtrl.SetItemState(row, col, m_dataDirectoriesCtrl.GetItemState(row, col) | GVIS_READONLY);
-				if (row > 0)
-					m_dataDirectoriesCtrl.SetItemBkColour(row, col, RGB(215, 215, 215));
-			}
-		}
-	}
 	createDataDirectoryHeaderLine(1, _T("Export Directory RVA"), offset,
 		sizeStrAry[sizeof(image64.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].VirtualAddress) - 1],
 		image64.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].VirtualAddress, m_dataDirectoriesCtrl);

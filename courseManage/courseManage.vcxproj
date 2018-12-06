@@ -95,12 +95,12 @@
       <PreprocessorDefinitions>WIN32;_WINDOWS;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>
       </SDLCheck>
-      <AdditionalIncludeDirectories>C:\数据\工作空间\vs2015\courseManage\courseManage\openssl-1.0.2l\inc32;E:\openssl-1.0.2l\inc32;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>E:\openssl-1.0.2l\inc32;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
-      <AdditionalLibraryDirectories>C:\数据\工作空间\vs2015\courseManage\courseManage\openssl-1.0.2l\out32dll;C:\数据\工作空间\vs2015\courseManage\courseManage\openssl-1.0.2l\out32;E:\openssl-1.0.2l\out32;E:\openssl-1.0.2l\out32dll;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>E:\openssl-1.0.2l\out32;E:\openssl-1.0.2l\out32dll;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <Midl>
       <MkTypLibCompatible>false</MkTypLibCompatible>
