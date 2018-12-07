@@ -163,7 +163,7 @@ BOOL CPeDialog::OnInitDialog()
 	CDialogEx::OnInitDialog();
 	m_sectionAry = NULL;
 	int pathLength = m_exeFullPath.GetLength();
-	int position = m_exeFullPath.ReverseFind('/') + 1;
+	int position = m_exeFullPath.ReverseFind('\\') + 1;
 	CString exeName = m_exeFullPath.Mid(position);
 	SetWindowText(_T(" ") + exeName + _T(" PE½á¹¹"));
 	m_hRoot = m_tree.InsertItem(_T("File:") + exeName);
@@ -245,7 +245,9 @@ void CPeDialog::GridCtrlInit_up()
 		}
 	}
 	CFileStatus fStatus;
+	Wow64EnableWow64FsRedirection(FALSE);
 	CFile::GetStatus(m_exeFullPath, fStatus);
+	Wow64EnableWow64FsRedirection(TRUE);
 	CString fileSizeStr;
 	fileSizeStr.Format(_T("%d(Bytes)"), fStatus.m_size);
 	makeItemToCtrl(m_gridCtrl, 3, 1, fileSizeStr);
@@ -262,14 +264,18 @@ void CPeDialog::GridCtrlInit_up()
 	c_path = T2A(m_exeFullPath);
 	memset(digest, 0, 16);
 	memset(digestS, 0, 20);
+	Wow64EnableWow64FsRedirection(FALSE);
 	MD5File(c_path, digest);
+	Wow64EnableWow64FsRedirection(TRUE);
 	CString md5Str;
 	md5Str.Format(_T("%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X"),
 		digest[0], digest[1], digest[2], digest[3], digest[4], digest[5], digest[6], 
 		digest[7], digest[8], digest[9], digest[10], digest[11], digest[12], digest[13], 
 		digest[14], digest[15]);
 	makeItemToCtrl(m_gridCtrl, 8, 1, md5Str);
+	Wow64EnableWow64FsRedirection(FALSE);
 	SHA1File(c_path, digestS);
+	Wow64EnableWow64FsRedirection(TRUE);
 	CString shaStr;
 	shaStr.Format(_T("%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X"),
 		digestS[0], digestS[1], digestS[2], digestS[3], digestS[4], digestS[5], digestS[6],
@@ -624,7 +630,9 @@ int CPeDialog::parseDosHeader()
 		}
 	}
 	CFile file;
+	Wow64EnableWow64FsRedirection(FALSE);
 	BOOL result = file.Open(m_exeFullPath, CFile::modeRead);
+	Wow64EnableWow64FsRedirection(TRUE);
 	int offsetTmp = 0;
 	if (result) {
 		CString sizeStrAry[4] = {_T("Byte"),_T("Word"),_T("") ,_T("Dword") };
@@ -823,7 +831,9 @@ void createfileHeaderLine(int row, CString name, int offset, CString &sizeStr, L
 int CPeDialog::validPeVerify()
 {
 	CFile file;
+	Wow64EnableWow64FsRedirection(FALSE);
 	BOOL result = file.Open(m_exeFullPath, CFile::modeRead);
+	Wow64EnableWow64FsRedirection(TRUE);
 	if (result) {
 		int peResult = 0;
 		IMAGE_DOS_HEADER dosHeader;
@@ -1060,7 +1070,9 @@ void createSectionHeaderLine(int row, IMAGE_SECTION_HEADER &sectionHeader, CGrid
 void CPeDialog::parseSection(int & ntOffset, int & sectionSize)
 {
 	CFile file;
+	Wow64EnableWow64FsRedirection(FALSE);
 	BOOL result = file.Open(m_exeFullPath, CFile::modeRead);
+	Wow64EnableWow64FsRedirection(TRUE);
 	if (result) {
 		CString sizeStrAry[4] = { _T("Byte"),_T("Word"),_T("") ,_T("Dword") };
 		file.Seek(ntOffset, CFile::begin);
@@ -1132,7 +1144,9 @@ void CPeDialog::parseNtHeader(int &ntOffset,int &sectionSize)
 		}
 	}
 	CFile file;
+	Wow64EnableWow64FsRedirection(FALSE);
 	BOOL result = file.Open(m_exeFullPath, CFile::modeRead);
+	Wow64EnableWow64FsRedirection(TRUE);
 	int offsetTmp = ntOffset;
 	if (result) {
 		CString sizeStrAry[4] = { _T("Byte"),_T("Word"),_T("") ,_T("Dword") };
