@@ -7,10 +7,31 @@
 #include "afxdialogex.h"
 #include "PeDialog.h"
 
+BOOL EnableDebugPrivilege()
+{
+	HANDLE hToken;
+	BOOL fOk = FALSE;
+	if (OpenProcessToken(GetCurrentProcess(), TOKEN_ADJUST_PRIVILEGES, &hToken)) //Get Token
+	{
+		TOKEN_PRIVILEGES tp;
+		tp.PrivilegeCount = 1;
+		if (!LookupPrivilegeValue(NULL, SE_DEBUG_NAME, &tp.Privileges[0].Luid))//Get Luid
+			printf("Can't lookup privilege value.\n");
+		tp.Privileges[0].Attributes = SE_PRIVILEGE_ENABLED;//这一句很关键，修改其属性为SE_PRIVILEGE_ENABLED
+		if (!AdjustTokenPrivileges(hToken, FALSE, &tp, sizeof(tp), NULL, NULL))//Adjust Token
+			printf("Can't adjust privilege value.\n");
+		fOk = (GetLastError() == ERROR_SUCCESS);
+		CloseHandle(hToken);
+	}
+	return fOk;
+}
+
+
 int GetMemoryUsage(uint64_t * mem, DWORD processId)
 {
 	PROCESS_MEMORY_COUNTERS pmc;
 	HANDLE hProcess;
+	EnableDebugPrivilege();
 	hProcess = OpenProcess(PROCESS_QUERY_INFORMATION |
 		PROCESS_VM_READ,
 		FALSE, processId);
@@ -33,6 +54,7 @@ int GetInfomation(DWORD processId, CString &info)
 	TCHAR str[400];
 	DWORD size = 400;
 	HANDLE hProcess;
+	EnableDebugPrivilege();
 	hProcess = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_QUERY_LIMITED_INFORMATION,
 		0, processId);
 	if (NULL == hProcess)
@@ -277,6 +299,7 @@ void CCourseManageMain::OnBnClickedButtonKillprocess()
 
 int CCourseManageMain::KillProcess(DWORD pid)
 {	
+	EnableDebugPrivilege();
 	HANDLE hProcess = OpenProcess(
 		PROCESS_TERMINATE,
 		FALSE,
@@ -341,6 +364,7 @@ void CCourseManageMain::InMenuOpenFolder()
 	TCHAR str[400] = {0};
 	DWORD size = 400;
 	HANDLE hProcess;
+	EnableDebugPrivilege();
 	hProcess = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_QUERY_LIMITED_INFORMATION,
 		0, processId);
 	if (NULL == hProcess)
@@ -432,8 +456,7 @@ void CCourseManageMain::OnCreateNewProcess()
 	INT_PTR result = createProcess.DoModal();
 	switch (result)
 	{
-	default:
-		break;
+	default:;
 	}
 }
 DWORD CCourseManageMain::m_SortColum = 0;
@@ -549,6 +572,7 @@ void CCourseManageMain::OnBnClickedShowpemsg()
 		TCHAR str[400] = { 0 };
 		DWORD size = 400;
 		HANDLE hProcess;
+		EnableDebugPrivilege();
 		hProcess = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_QUERY_LIMITED_INFORMATION,
 			0, processId);
 		if (NULL == hProcess)
@@ -577,6 +601,7 @@ void CCourseManageMain::OnShowPeDialog()
 		TCHAR str[400] = { 0 };
 		DWORD size = 400;
 		HANDLE hProcess;
+		EnableDebugPrivilege();
 		hProcess = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_QUERY_LIMITED_INFORMATION,
 			0, processId);
 		if (NULL == hProcess)
